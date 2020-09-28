@@ -1,0 +1,21 @@
+syntax = "proto3";
+option optimize_for = CODE_SIZE;
+option go_package = ".;proto";
+
+package proto;
+
+message CEmpty{}
+
+message FetchConfigArgs{
+  string namespace = 1;
+  string  key = 2;
+  string  version = 3;
+}
+message FetchConfigReply{
+  bytes value = 1;
+}
+
+service Component {
+  rpc FetchConfig(FetchConfigArgs)returns(FetchConfigReply);
+  rpc CreateFactory(CEmpty)returns(CEmpty);
+}

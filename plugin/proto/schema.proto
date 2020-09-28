@@ -1,0 +1,57 @@
+syntax = "proto3";
+option optimize_for = CODE_SIZE;
+option go_package = ".;proto";
+
+package proto;
+
+message SchemaRequestArgs{
+
+}
+//接口属性列
+//type Field struct {
+//    Field      string `json:"field"`
+//    Name       string `json:"name"`
+//    Type       string `json:"type"`
+//    Required   bool   `json:"required"`
+//    Deprecated bool   `json:"deprecated"`
+//}
+message Field{
+  string field = 1;
+  string name = 2;
+  string kind = 3;
+  bool required = 4;
+  bool deprecated = 5;
+  bool isList = 6;
+  string example = 8;
+  repeated Field reference = 9;
+}
+////接口属性
+//type Schema struct {
+//	Description string   `json:"description"`
+//	Authorized  bool     `json:"authorized"`
+//	Deprecated  bool     `json:"deprecated"`
+//	Input       []*Field `json:"input,omitempty"`
+//	Output      []*Field `json:"output,omitempty"`
+//}
+message Schema{
+  string description = 1;
+  bool authorized = 2;
+  bool deprecated = 3;
+  repeated Field input = 4;
+  repeated Field output = 5;
+}
+//type NamespaceSchema struct {
+//	Namespace   string `json:"namespace"`
+//	Description string `json:"description"`
+//	Operations  map[Operation]*Schema
+//}
+message NamespaceSchema{
+  string namespace = 1;
+  string description = 2;
+  map<string, Schema> operations = 3;
+}
+
+message SchemaRequestReply{
+  repeated NamespaceSchema NamespaceSchemas = 1;
+  string  err = 2;
+}

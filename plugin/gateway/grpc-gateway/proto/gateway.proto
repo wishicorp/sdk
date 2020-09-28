@@ -1,0 +1,55 @@
+syntax = "proto3";
+option optimize_for = CODE_SIZE;
+option go_package = ".;proto";
+
+package proto;
+
+message SchemasArgs{
+  string backend = 1;
+}
+message Field {
+  string field = 1;
+  string name = 2;
+  string type = 3;
+  bool required = 4;
+  bool deprecated = 5;
+}
+
+message Operation {
+  string description = 1;
+  bool authorized = 2 ;
+  bool deprecated = 3;
+  repeated Field input = 4;
+  repeated Field output = 5;
+}
+
+message Schema{
+  string namespace = 1;
+  string description = 2;
+  map<string, Operation>  Operations = 3;
+}
+message SchemasReply{
+  repeated Schema schemas = 1;
+}
+
+message RequestArgs{
+  string backend = 1;
+  string namespace = 2;
+  string operation = 3;
+  string authorization = 4;
+  bytes body = 5;
+}
+
+message RequestReply{
+  int64 code = 1;
+  string message = 2;
+  string err = 3;
+  bytes data = 4;
+}
+
+service RpcGateway{
+  //获取协议目录
+  rpc Schemas(SchemasArgs)returns(SchemasReply);
+  //执行请求
+  rpc ExecRequest(RequestArgs)returns(RequestReply);
+}

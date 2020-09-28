@@ -1,0 +1,91 @@
+package pool
+
+import (
+	"context"
+	"errors"
+	"github.com/hashicorp/go-hclog"
+	"time"
+)
+
+var ErrWorkFull = errors.New("worker chan is full")
+
+//任务结构体
+type Worker struct {
+	factory   Factory //任务执行方法
+	name      string
+	running   chan bool
+	stopCtx   context.Context //用于从外部context直接关闭pool
+	stopChan  chan bool       //用于pool自身的shutdown方法关闭
+	inputChan chan *subject   //数据输入chan
+	logger    hclog.Logger
+}
+
+func NewWorker(name string, ctx context.Context, factory Factory, logger hclog.Logger) *Worker {
+	return &Worker{
+		name:      name,
+		factory:   factory,
+		stopCtx:   ctx,
+		stopChan:  make(chan bool, 1),
+		logger:    logger.Named(name),
+		inputChan: make(chan *subject, 16384),
+		running:   make(chan bool, 1),
+	}
+}
+
+func (m *Worker) Running() <-chan bool {
+	return m.running
+}
+
+func (m *Worker) ChanSize() int {
+	return len(m.inputChan)
+}
+
+func (m *Worker) Input(s *subject) error {
+	if len(m.inputChan) == cap(m.inputChan) {
+		return ErrWorkFull
+	}
+	m.inputChan <- s
+	return nil
+}
+func (m *Worker) Stop() {
+	m.stopChan <- true
+}
+
+func (m *Worker) Start() {
+	defer func() {
+		if m.logger.IsTrace() {
+			m.logger.Trace("exited")
+		}
+	}()
+
+	for {
+		select {
+		case s := <-m.inputChan:
+			if m.logger.IsTrace() {
+				m.logger.Trace("started")
+			}
+			result, err := m.factory()(s.data)
+			s.updateContext(result, err)
+
+			if m.logger.IsTrace() {
+				m.logger.Trace("finished")
+			}
+		case <-m.stopChan:
+			m.cleanup()
+			return
+		case <-m.stopCtx.Done():
+			m.cleanup()
+			return
+		}
+	}
+
+}
+
+func (m *Worker) cleanup() {
+	for i := 0; i < len(m.inputChan); {
+		time.Sleep(time.Second)
+	}
+	close(m.stopChan)
+	close(m.inputChan)
+	close(m.running)
+}

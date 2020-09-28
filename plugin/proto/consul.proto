@@ -1,0 +1,158 @@
+syntax = "proto3";
+option optimize_for = CODE_SIZE;
+option go_package = ".;proto";
+
+package proto;
+message ConsulEmpty{}
+
+message AgentWeights{
+  int32 passing = 1;
+  int32 warning = 2 ;
+}
+
+message ServiceAddress{
+  string address = 1;
+  int32 port = 2;
+}
+message GetServiceArgs{
+  string  name = 1;
+  string  tags = 2;
+}
+message GetServiceReply{
+  string kind = 1;
+  string id = 2;
+  string service = 3 ;
+  repeated string tags = 4;
+  map<string, string>    meta = 5;
+  int32    port = 6;
+  string   address = 7;
+  map<string, ServiceAddress>    taggedAddresses = 8;
+  AgentWeights Weights = 9;
+  bool  enableTagOverride = 10;
+}
+
+message NewSessionArgs{
+  string  name = 1;
+  string  ttl = 2; //type like time.Duration
+  string behavior = 3;
+}
+
+message ServiceCheck{
+  string ID = 1;
+  string Namespace = 2;
+}
+message SessionEntry{
+  uint64 CreateIndex = 1;
+  string ID = 2;
+  string Name = 3;
+  string Node = 4;
+  string LockDelay = 5;//
+  string   Behavior = 6;
+  string    TTL = 7;
+  repeated string Checks = 8;
+  repeated string   NodeChecks = 9;
+  repeated ServiceCheck ServiceChecks = 10;
+}
+message NewSessionReply{
+  string  name = 1;
+}
+
+message SessionInfoArgs{
+  string  id = 1;
+}
+message SessionInfoReply{
+  SessionEntry entry = 1;
+}
+
+message DestroySessionArgs{
+  string  id = 1;
+}
+
+message KVPair{
+  string Key = 1;
+
+  // CreateIndex holds the index corresponding the creation of this KVPair. This
+  // is a read-only field.
+  uint64 CreateIndex = 2;
+
+  // ModifyIndex is used for the Check-And-Set operations and can also be fed
+  // back into the WaitIndex of the QueryOptions in order to perform blocking
+  // queries.
+  uint64 ModifyIndex = 3;
+
+  // LockIndex holds the index corresponding to a lock on this key, if any. This
+  // is a read-only field.
+  uint64 LockIndex = 4;
+
+  // Flags are any user-defined flags on the key. It is up to the implementer
+  // to check these values, since Consul does not treat them specially.
+  uint64 Flags = 5;
+
+  // Value is the value for the key. This can be any value, but it will be
+  // base64 encoded upon transport.
+  bytes Value = 6;
+
+  // Session is a string representing the ID of the session. Any other
+  // interactions with this key over the same session must specify the same
+  // session ID.
+  string     Session = 7;
+}
+message KVAcquireArgs{
+  string  key = 1;
+  string  session = 2;
+}
+message KVAcquireReply{
+  bool success = 1;
+}
+message KVReleaseArgs{
+  string key = 1;
+}
+
+message KVInfoArgs{
+  string key = 1;
+}
+message KVInfoReply{
+  KVPair kvpair = 1;
+}
+
+message KVCasArgs{
+  KVPair kvpair = 1;
+}
+message KVCasReply{
+  bool success = 1;
+}
+message GetConfigArgs{
+  string key = 1;
+  string version =2;
+  bool sandbox = 3;
+}
+message GetConfigReply{
+  bytes value = 1;
+  string format = 2;
+}
+message KVListArgs{
+  string prefix = 1;
+}
+message KVListReply{
+  repeated KVPair kvPairs = 1;
+}
+service Consul {
+  rpc GetConfig(GetConfigArgs)returns(GetConfigReply);
+
+  rpc GetService(GetServiceArgs)returns (GetServiceReply);
+  rpc NewSession(NewSessionArgs)returns (NewSessionReply);
+  rpc SessionInfo(SessionInfoArgs)returns (SessionInfoReply);
+  rpc DestroySession(DestroySessionArgs)returns(ConsulEmpty);
+  //对一个kv进行加锁
+  //another标志key是否被其它session锁定
+  //err==nil && false == another 加锁成功
+  rpc KVAcquire(KVAcquireArgs) returns(KVAcquireReply);
+  //释放一个session的锁
+  rpc KVRelease(KVReleaseArgs) returns(ConsulEmpty);
+  //获取kv信息
+  rpc KVInfo(KVInfoArgs)returns (KVInfoReply);
+  //检查或者设置key
+  rpc KVCas(KVCasArgs) returns(KVCasReply);
+  rpc KVCreate(KVCasArgs) returns(ConsulEmpty);
+  rpc KVList(KVListArgs) returns(KVListReply);
+}

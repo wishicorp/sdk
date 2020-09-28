@@ -1,0 +1,119 @@
+syntax = "proto3";
+option optimize_for = CODE_SIZE;
+option go_package = ".;proto";
+import "schema.proto";
+
+package proto;
+
+enum ReturnCode{
+  SUCCESS = 0;
+  FAILURE = 1;
+}
+
+message Empty {}
+
+message Header {
+  repeated string header = 1;
+}
+
+message ProtoError {
+  uint32 err_type = 1;
+  string err_msg = 2;
+  int64 err_code = 3;
+}
+
+message Connection {
+  // RemoteAddr is the network address that sent the request.
+  string remote_addr = 1;
+}
+message Request {
+  string id = 1;
+  string operation = 2;
+  string namespace = 3;
+  string token = 4;
+  bytes authorization = 5;
+  map<string, bytes> data = 6;
+  Connection connection = 7;
+  map<string, Header> headers = 8;
+}
+// HandleRequestArgs is the args for HandleRequest method.
+message HandleRequestArgs {
+  uint32 storage_id = 1;
+  Request request = 2;
+}
+
+message HandlerResponse {
+  int64 result_code = 1;
+  string result_msg = 2;
+  string data = 3;
+  map<string, Header> headers = 4;
+}
+
+// HandleRequestReply is the reply for HandleRequest method.
+message HandleRequestReply {
+  HandlerResponse response = 1;
+  ProtoError err = 2;
+}
+// InitializeArgs is the args for Initialize method.
+message InitializeArgs {
+  map<string, string> params = 1;
+}
+
+// InitializeReply is the reply for Initialize method.
+message InitializeReply {
+  ProtoError err = 1;
+}
+// SetupArgs is the args for Setup method.
+message SetupArgs {
+  uint32 broker_id = 1;
+  map<string, string> Config = 2;
+  string backendUUID = 3;
+}
+
+// SetupReply is the reply for Setup method.
+message SetupReply {
+  string err = 1;
+}
+// TypeReply is the reply for the Type method.
+message TypeReply {
+  uint32 type = 1;
+}
+message VersionReply{
+  string version = 1;
+}
+// HandleExistenceCheckArgs is the args for HandleExistenceCheck method.
+message HandleExistenceCheckArgs {
+  uint32 storage_id = 1;
+  Request  request = 2;
+}
+
+// HandleExistenceCheckReply is the reply for HandleExistenceCheck method.
+message HandleExistenceCheckReply {
+  bool check_found = 1;
+  bool exists = 2;
+  ProtoError err = 3;
+}
+
+service Backend {
+
+  rpc SchemaRequest(Empty) returns (SchemaRequestReply);
+  // HandleRequest is used to handle a request and generate a response.
+  // The plugins must check the operation type and handle appropriately.
+  rpc HandleRequest(HandleRequestArgs) returns (HandleRequestReply);
+  rpc HandleExistenceCheck(HandleExistenceCheckArgs) returns (HandleExistenceCheckReply);
+  rpc Cleanup(Empty) returns (Empty);
+
+  // Setup is used to set up the backend based on the provided backend
+  // configuration. The plugin's setup implementation should use the provided
+  // broker_id to create a connection for use with the Storage
+  // and SystemView clients.
+  rpc Setup(SetupArgs) returns (SetupReply);
+
+  // Initialize is invoked just after mounting a backend to allow it to
+  // handle any initialization tasks that need to be performed.
+  rpc Initialize(InitializeArgs) returns (InitializeReply);
+
+  // Type returns the BackendType for the particular backend
+  rpc Type(Empty) returns (TypeReply);
+  rpc Version(Empty) returns (VersionReply);
+}
