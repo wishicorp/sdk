@@ -1,16 +1,17 @@
 syntax = "proto3";
 option optimize_for = CODE_SIZE;
-option go_package = ".;proto";
+option go_package = ".;gwproto";
 
-package proto;
+package gwproto;
 
 message SchemasArgs{
   string backend = 1;
+  string namespace = 2;
 }
 message Field {
   string field = 1;
   string name = 2;
-  string type = 3;
+  string kind = 3;
   bool required = 4;
   bool deprecated = 5;
 }
@@ -21,6 +22,7 @@ message Operation {
   bool deprecated = 3;
   repeated Field input = 4;
   repeated Field output = 5;
+  map<int32, string>  errors = 6;
 }
 
 message Schema{
@@ -28,23 +30,30 @@ message Schema{
   string description = 2;
   map<string, Operation>  Operations = 3;
 }
-message SchemasReply{
+message Schemas{
   repeated Schema schemas = 1;
+}
+message SchemasReply{
+  map<string, Schemas> SchemasMap = 1;
 }
 
 message RequestArgs{
   string backend = 1;
   string namespace = 2;
   string operation = 3;
-  string authorization = 4;
-  bytes body = 5;
+  bytes data = 5;
+}
+
+message Result {
+  int32 result_code = 1;
+  string result_msg = 2;
+  bytes data = 3;
 }
 
 message RequestReply{
   int64 code = 1;
   string message = 2;
-  string err = 3;
-  bytes data = 4;
+  Result Result = 3;
 }
 
 service RpcGateway{

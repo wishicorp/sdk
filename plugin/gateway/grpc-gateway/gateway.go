@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"github.com/hashicorp/go-hclog"
 	"github.com/wishicorp/sdk/plugin/gateway"
-	"github.com/wishicorp/sdk/plugin/gateway/grpc-gateway/proto"
+	proto "github.com/wishicorp/sdk/plugin/gateway/grpc-gateway/proto"
 	"github.com/wishicorp/sdk/plugin/logical"
 	"github.com/wishicorp/sdk/plugin/pluginregister"
 	"github.com/wishicorp/sdk/pool"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"math"
 	"net"
 	"time"
@@ -33,7 +34,7 @@ type GRPCGateway struct {
 }
 
 func (m *GRPCGateway) SetSecurity(security gateway.Security) {
-	panic("implement me")
+	m.security = security
 }
 
 func NewGateway(m *pluginregister.PluginManager, workerSize int, logger hclog.Logger) *GRPCGateway {
@@ -49,8 +50,13 @@ func NewGateway(m *pluginregister.PluginManager, workerSize int, logger hclog.Lo
 	var opts []grpc.ServerOption
 	opts = append(opts, grpc.MaxRecvMsgSize(math.MaxInt32))
 	opts = append(opts, grpc.MaxSendMsgSize(math.MaxInt32))
-
 	gw.grpcServer = grpc.NewServer(opts...)
+
+	reflection.Register(gw.grpcServer)
+
+	proto.RegisterRpcGatewayServer(gw.grpcServer, gw.NewGRPCGatewayImpl())
+
+	gw.startWorkerPool(gw.workerSize)
 
 	return gw
 }
@@ -73,11 +79,11 @@ func (m *GRPCGateway) SetPluginAuthorized(authenticator logical.PluginAuthentica
 	m.authenticator = authenticator
 }
 
-func (m *GRPCGateway) Serve() error {
-	m.startWorkerPool(m.workerSize)
-	proto.RegisterRpcGatewayServer(m.grpcServer, &proto.UnimplementedRpcGatewayServer{})
-	m.grpcServer.Serve(m.tcpListen)
-	return nil
+func (m *GRPCGateway) Serve() (err error) {
+	go func() {
+		err = m.grpcServer.Serve(m.tcpListen)
+	}()
+	return err
 }
 
 //关闭网关
@@ -89,7 +95,7 @@ func (m *GRPCGateway) Shutdown() {
 	}()
 
 	m.workerPool.Shutdown()
-
+	m.grpcServer.Stop()
 	select {
 	case <-m.workerPool.Running():
 	case <-time.After(time.Second * 1):
