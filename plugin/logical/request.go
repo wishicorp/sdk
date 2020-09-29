@@ -20,6 +20,14 @@ type Request struct {
 	Connection    *Connection         `json:"connection" structs:"connection" mapstructure:"connection"`
 }
 
+func (r *Request) GetData() []byte {
+	input, ok := r.Data["data"]
+	if !ok {
+		return nil
+	}
+	return input
+}
+
 func (r *Request) Decode(out interface{}) error {
 	if r.Data == nil {
 		return ErrInvalidData
