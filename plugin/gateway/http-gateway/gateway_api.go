@@ -37,7 +37,7 @@ func (m *HttpGateway) api() {
 				return
 			}
 			client := &gateway.Client{
-				RemoteAddr: getRemoteAddr(c),
+				RemoteAddr: GetRemoteAddr(c),
 				Referer:    c.Request.Referer(),
 				UserAgent:  c.Request.UserAgent(),
 			}
@@ -106,7 +106,7 @@ func (m *HttpGateway) invokeRequest(c *gin.Context, method gateway.Method, data 
 		},
 		Token: c.Request.Header.Get(logical.AuthTokenName),
 		Connection: &logical.Connection{
-			RemoteAddr: getRemoteAddr(c),
+			RemoteAddr: GetRemoteAddr(c),
 			ConnState:  c.Request.TLS,
 		},
 	}
@@ -127,7 +127,7 @@ func (m *HttpGateway) invokeRequest(c *gin.Context, method gateway.Method, data 
 	}
 }
 
-func getRemoteAddr(c *gin.Context) string {
+func GetRemoteAddr(c *gin.Context) string {
 	remoteAddr := c.Request.RemoteAddr
 	if remoteAddr == "127.0.0.1" {
 		remoteAddr = c.GetHeader("X-Forwarded-For")

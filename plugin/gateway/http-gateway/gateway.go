@@ -2,6 +2,7 @@ package http_gateway
 
 import (
 	"context"
+	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/go-hclog"
 	gin_http "github.com/wishicorp/sdk/framework/gin-http"
 	"github.com/wishicorp/sdk/plugin/gateway"
@@ -69,6 +70,15 @@ func (m *HttpGateway) Shutdown() {
 //网关是否在运行(阻塞等待)
 func (m *HttpGateway) Running() <-chan bool {
 	return m.running
+}
+
+func (m *HttpGateway) AddRouter(method, router string, handleFunc func(*gin.Context) error) {
+	m.ginServer.Router.Handle(method, router, func(c *gin.Context) {
+		err := handleFunc(c)
+		if nil != err {
+			m.logger.Error("handle", "method", method, "router", router, err)
+		}
+	})
 }
 
 func (m *HttpGateway) Listen(addr string, port uint) error {

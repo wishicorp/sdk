@@ -52,7 +52,7 @@ func (m *HttpGateway) traceReply(c *gin.Context, resp *workerReply) {
 			"http-gateway trace",
 			"path", c.Request.RequestURI,
 			"method", c.Request.Method,
-			"client", getRemoteAddr(c),
+			"client", GetRemoteAddr(c),
 			"response", jsonutil.EncodeToString(resp.result),
 			"err", resp.err,
 		)
