@@ -8,6 +8,8 @@ import (
 
 const SchemaRequestTag = "__SCHEMA__"
 
+type Errors map[int]string
+
 //接口属性列
 type Field struct {
 	Field      string   `json:"field"`
@@ -40,6 +42,7 @@ type Schema struct {
 	Deprecated  bool     `json:"deprecated"`
 	Input       []*Field `json:"input,omitempty"`
 	Output      []*Field `json:"output,omitempty"`
+	Errors      Errors   `json:"errors,omitempty"`
 }
 
 func fieldError(sName, fName, tName string) error {

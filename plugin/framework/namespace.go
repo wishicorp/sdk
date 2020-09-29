@@ -65,6 +65,7 @@ type OperationProperties struct {
 	Deprecated  bool
 	Input       *logical.SchemaType `json:"-"`
 	Output      *logical.SchemaType `json:"-"`
+	Errors      logical.Errors      `json:"errors"`
 }
 
 type Response struct {
@@ -80,6 +81,7 @@ type PathOperation struct {
 	Deprecated  bool
 	Input       *logical.SchemaType
 	Output      *logical.SchemaType
+	Errors      logical.Errors `json:"errors"`
 }
 
 func (p *PathOperation) Handler() OperationFunc {
@@ -93,5 +95,6 @@ func (p *PathOperation) Properties() OperationProperties {
 		Authorized:  p.Authorized,
 		Input:       p.Input,
 		Output:      p.Output,
+		Errors:      p.Errors,
 	}
 }

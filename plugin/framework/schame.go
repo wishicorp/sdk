@@ -39,6 +39,7 @@ func (b *Backend) initSchema() error {
 				Deprecated:  properties.Deprecated,
 				Input:       input,
 				Output:      output,
+				Errors:      properties.Errors,
 			}
 			namespace.Operations[opt] = schema
 		}
