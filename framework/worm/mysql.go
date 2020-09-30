@@ -46,6 +46,7 @@ func NewSingleConn(c *Config, logger hclog.Logger) (DBInterface, error) {
 	conn.SetLogger(NewSQLLogger(logger, c.ShowSql))
 	conn.SetMapper(core.GonicMapper{})
 	conn.ShowSQL(c.ShowSql)
+	conn.SetLogLevel(core.LOG_INFO)
 	conn.SetMaxIdleConns(c.MaxIdle)
 	conn.SetMaxOpenConns(c.MaxConn)
 	return conn, nil

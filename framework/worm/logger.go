@@ -20,12 +20,12 @@ func NewSQLLogger(log hclog.Logger, showSql bool) *SQLLogger {
 }
 
 func (s *SQLLogger) Debug(v ...interface{}) {
-	s.log.Debug("", v...)
+	//s.log.Debug("", v...)
 }
 
 func (s *SQLLogger) Debugf(format string, v ...interface{}) {
-	msg := fmt.Sprintf(format, v...)
-	s.log.Debug(msg)
+	//msg := fmt.Sprintf(format, v...)
+	//s.log.Debug(msg)
 }
 
 func (s *SQLLogger) Error(v ...interface{}) {
@@ -56,35 +56,11 @@ func (s *SQLLogger) Warnf(format string, v ...interface{}) {
 }
 
 func (s *SQLLogger) Level() core.LogLevel {
-	if s.log.IsDebug() || s.log.IsTrace() {
-		return core.LOG_DEBUG
-	}
-	if s.log.IsInfo() {
-		return core.LOG_INFO
-	}
-	if s.log.IsError() {
-		return core.LOG_ERR
-	}
-	if s.log.IsWarn() {
-		return core.LOG_WARNING
-	}
-	return core.LOG_UNKNOWN
+	return core.LOG_INFO
 }
 
 func (s *SQLLogger) SetLevel(l core.LogLevel) {
-	switch l {
-	case core.LOG_INFO:
-		s.log.SetLevel(hclog.Info)
-	case core.LOG_WARNING:
-		s.log.SetLevel(hclog.Warn)
-	case core.LOG_DEBUG:
-		s.log.SetLevel(hclog.Trace)
-	case core.LOG_ERR:
-		s.log.SetLevel(hclog.Error)
-	default:
-		s.log.SetLevel(hclog.NoLevel)
-	}
-
+	s.log.SetLevel(hclog.Info)
 }
 
 func (s *SQLLogger) ShowSQL(show ...bool) {
