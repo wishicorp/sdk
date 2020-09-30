@@ -22,7 +22,9 @@ type Sort struct {
 }
 
 func NewPageable(page, size int) *Pageable {
-
+	if size == 0 {
+		size = 30
+	}
 	return &Pageable{page: page, size: size}
 }
 
