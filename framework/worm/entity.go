@@ -22,6 +22,7 @@ type Entity interface {
 
 	Delete() (int64, error)
 	DeleteByPk() (int64, error)
+	Entity() interface{}
 }
 
 type SessionEntity interface {
@@ -50,6 +51,9 @@ func NewEntity(dao BaseDao, objectPtr interface{}) BaseEntity {
 func (e *entity) NewSession() SessionEntity {
 	e.sessionDao = e.dao.NewSession()
 	return e
+}
+func (e *entity) Entity() interface{} {
+	return e.objectPtr
 }
 
 func (e *entity) Id() interface{} {

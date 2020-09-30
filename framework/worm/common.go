@@ -5,10 +5,10 @@ import (
 	"github.com/go-xorm/xorm"
 )
 
-var ErrInsertedEmpty = errors.New("update affected 0 rows")
-var ErrDeletedEmpty = errors.New("update affected 0 rows")
-var ErrUpdatedEmpty = errors.New("update affected 0 rows")
 var ErrGetEmpty = errors.New("found 0 rows")
+var ErrUpdatedEmpty = errors.New("update affected 0 rows")
+var ErrDeletedEmpty = errors.New("update affected 0 rows")
+var ErrInsertedEmpty = errors.New("update affected 0 rows")
 
 func DoGet(call func() (bool, error)) error {
 	has, err := call()
