@@ -70,7 +70,6 @@ func (b *backendGRPCPluginClient) Setup(ctx context.Context, config *logical.Bac
 	component := &GRPCComponentServer{
 		impl: config.ComponentView,
 	}
-
 	// Register the server in this closure.
 	serverFunc := func(opts []grpc.ServerOption) *grpc.Server {
 		opts = append(opts, grpc.MaxRecvMsgSize(math.MaxInt32))

@@ -47,22 +47,17 @@ func (m *HttpGateway) backend() func(i interface{}) (interface{}, error) {
 		backend.Incr()
 		defer backend.DeIncr()
 
-		_, err = m.authorization(backend, data.request)
+		authorized, err := m.authorization(backend, data.request)
 		if err != nil {
 			return nil, err
 		}
-
+		authBytes, err := authorized.Encode()
+		if nil != err {
+			return nil, logical.ErrAuthorizationTokenInvalid
+		}
+		data.request.Authorization = authBytes
 		result, err = backend.HandleRequest(context.Background(), data.request)
 
 		return result, err
 	}
-}
-
-func (m *HttpGateway) authorization(backend logical.Backend, request *logical.Request) (logical.Authorized, error) {
-	if m.authenticator == nil {
-		return logical.Authorized{}, logical.ErrAuthenticatorNotSet
-	}
-
-	auth, err := m.authenticator.Authorization(backend, request)
-	return auth, err
 }

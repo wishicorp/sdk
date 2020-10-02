@@ -60,6 +60,10 @@ func (m *GRPCGateway) backend() func(i interface{}) (interface{}, error) {
 			return nil, err
 		}
 		authBytes, err := jsonutil.EncodeJSON(auth)
+		if err != nil {
+			return nil, err
+		}
+
 		data.request.Data[logical.Authorization] = authBytes
 		result, err = backend.HandleRequest(context.Background(), data.request)
 
@@ -68,9 +72,5 @@ func (m *GRPCGateway) backend() func(i interface{}) (interface{}, error) {
 }
 
 func (m *GRPCGateway) authorization(backend logical.Backend, request *logical.Request) (logical.Authorized, error) {
-	if m.authenticator == nil {
-		return logical.Authorized{}, nil
-	}
-	auth, err := m.authenticator.Authorization(backend, request)
-	return auth, err
+	return logical.Authorized{}, nil
 }

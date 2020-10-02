@@ -2,35 +2,52 @@ package grpc_gateway
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/hashicorp/go-hclog"
 	"github.com/wishicorp/sdk/plugin/gateway"
 	proto "github.com/wishicorp/sdk/plugin/gateway/grpc-gateway/proto"
-	"github.com/wishicorp/sdk/plugin/logical"
 	"github.com/wishicorp/sdk/plugin/pluginregister"
 	"github.com/wishicorp/sdk/pool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"math"
 	"net"
+	"strings"
 	"time"
 )
 
 var _ gateway.Gateway = (*GRPCGateway)(nil)
 
 type GRPCGateway struct {
-	pm            *pluginregister.PluginManager
-	logger        hclog.Logger
-	workerPool    *pool.WorkerPool
-	ctx           context.Context
-	cancel        context.CancelFunc
-	running       chan bool
-	workerSize    int
-	security      gateway.Security
-	authenticator logical.PluginAuthenticator
-	grpcServer    *grpc.Server
-	tcpListen     *net.TCPListener
-	impl          proto.RpcGatewayServer
+	pm         *pluginregister.PluginManager
+	logger     hclog.Logger
+	workerPool *pool.WorkerPool
+	ctx        context.Context
+	cancel     context.CancelFunc
+	running    chan bool
+	workerSize int
+	security   gateway.Security
+	grpcServer *grpc.Server
+	tcpListen  *net.TCPListener
+	impl       proto.RpcGatewayServer
+	authMethod *gateway.Method
+}
+
+func (m *GRPCGateway) SetAuthMethod(method string) error {
+	if method == "" {
+		return nil
+	}
+	methods := strings.Split(method, ".")[:]
+	if len(methods) != 3 {
+		return errors.New("auth method error")
+	}
+	m.authMethod = &gateway.Method{
+		Backend:   methods[0],
+		Namespace: methods[1],
+		Operation: methods[2],
+	}
+	return nil
 }
 
 func (m *GRPCGateway) SetSecurity(security gateway.Security) {
@@ -73,10 +90,6 @@ func (m *GRPCGateway) Listen(addr string, port uint) error {
 	m.tcpListen = tcpListen
 
 	return nil
-}
-
-func (m *GRPCGateway) SetPluginAuthorized(authenticator logical.PluginAuthenticator) {
-	m.authenticator = authenticator
 }
 
 func (m *GRPCGateway) Serve() (err error) {

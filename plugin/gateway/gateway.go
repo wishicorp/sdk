@@ -1,7 +1,5 @@
 package gateway
 
-import "github.com/wishicorp/sdk/plugin/logical"
-
 type Client struct {
 	RemoteAddr string
 	Referer    string
@@ -24,7 +22,7 @@ type RequestArgs struct {
 
 type Gateway interface {
 	SetSecurity(security Security)
-	SetPluginAuthorized(authenticator logical.PluginAuthenticator)
+	SetAuthMethod(method string) error
 	Shutdown()
 	Running() <-chan bool
 	Listen(addr string, port uint) error

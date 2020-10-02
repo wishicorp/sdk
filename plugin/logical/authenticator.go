@@ -8,9 +8,10 @@ import (
 const Authorization = "Authorization"
 const AuthTokenName = "x-auth-token"
 
+var ErrAuthMethodRequired = errors.New("Authorization method required")
+var ErrAuthMethodNotFound = errors.New("Authorization method not found")
 var ErrAuthorizationTokenRequired = errors.New("Authorization token required")
 var ErrAuthorizationTokenInvalid = errors.New("Authorization token invalid")
-var ErrAuthenticatorNotSet = errors.New("Authenticator not set")
 
 //验证信息
 type Authorized map[string]interface{}
@@ -24,8 +25,4 @@ func (a Authorized) GetAuthorizer() interface{} {
 }
 func (a Authorized) SetAuthorizer(in interface{}) {
 	a[Authorization] = in
-}
-
-type PluginAuthenticator interface {
-	Authorization(backend Backend, request *Request) (Authorized, error)
 }

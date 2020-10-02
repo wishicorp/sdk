@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/apache/rocketmq-client-go/v2 v2.0.0
 	github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310
+	github.com/emirpasic/gods v1.12.0
 	github.com/fatih/structs v1.1.0
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-playground/validator/v10 v10.2.0

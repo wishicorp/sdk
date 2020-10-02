@@ -2,29 +2,30 @@ package http_gateway
 
 import (
 	"context"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/go-hclog"
 	gin_http "github.com/wishicorp/sdk/framework/gin-http"
 	"github.com/wishicorp/sdk/plugin/gateway"
-	"github.com/wishicorp/sdk/plugin/logical"
 	"github.com/wishicorp/sdk/plugin/pluginregister"
 	"github.com/wishicorp/sdk/pool"
+	"strings"
 	"time"
 )
 
 var _ gateway.Gateway = (*HttpGateway)(nil)
 
 type HttpGateway struct {
-	pm            *pluginregister.PluginManager
-	logger        hclog.Logger
-	workerPool    *pool.WorkerPool
-	ctx           context.Context
-	cancel        context.CancelFunc
-	ginServer     *gin_http.Server
-	running       chan bool
-	workerSize    int
-	authenticator logical.PluginAuthenticator
-	security      gateway.Security
+	pm         *pluginregister.PluginManager
+	logger     hclog.Logger
+	workerPool *pool.WorkerPool
+	ctx        context.Context
+	cancel     context.CancelFunc
+	ginServer  *gin_http.Server
+	running    chan bool
+	workerSize int
+	authMethod *gateway.Method
+	security   gateway.Security
 }
 
 func NewGateway(m *pluginregister.PluginManager, workerSize int, logger hclog.Logger) *HttpGateway {
@@ -44,8 +45,21 @@ func NewGateway(m *pluginregister.PluginManager, workerSize int, logger hclog.Lo
 func (m *HttpGateway) SetSecurity(security gateway.Security) {
 	m.security = security
 }
-func (m *HttpGateway) SetPluginAuthorized(authenticator logical.PluginAuthenticator) {
-	m.authenticator = authenticator
+
+func (m *HttpGateway) SetAuthMethod(method string) error {
+	if method == "" {
+		return nil
+	}
+	methods := strings.Split(method, ".")[:]
+	if len(methods) != 3 {
+		return errors.New("auth method error")
+	}
+	m.authMethod = &gateway.Method{
+		Backend:   methods[0],
+		Namespace: methods[1],
+		Operation: methods[2],
+	}
+	return nil
 }
 
 //关闭网关
