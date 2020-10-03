@@ -16,30 +16,40 @@ import (
 var _ gateway.Gateway = (*HttpGateway)(nil)
 
 type HttpGateway struct {
-	pm         *pluginregister.PluginManager
-	logger     hclog.Logger
-	workerPool *pool.WorkerPool
-	ctx        context.Context
-	cancel     context.CancelFunc
-	ginServer  *gin_http.Server
-	running    chan bool
-	workerSize int
-	authMethod *gateway.Method
-	security   gateway.Security
+	pm          *pluginregister.PluginManager
+	logger      hclog.Logger
+	workerPool  *pool.WorkerPool
+	ctx         context.Context
+	cancel      context.CancelFunc
+	ginServer   *gin_http.Server
+	running     chan bool
+	workerSize  int
+	authMethod  *gateway.Method
+	authEnabled bool
+	security    gateway.Security
 }
 
 func NewGateway(m *pluginregister.PluginManager, workerSize int, logger hclog.Logger) *HttpGateway {
 	ctx, cancel := context.WithCancel(context.Background())
 	gw := &HttpGateway{
-		pm:         m,
-		logger:     logger.Named("http-gateway"),
-		ctx:        ctx,
-		cancel:     cancel,
-		running:    make(chan bool, 1),
-		workerSize: workerSize,
-		ginServer:  gin_http.NewServer(),
+		pm:          m,
+		logger:      logger.Named("http-gateway"),
+		ctx:         ctx,
+		cancel:      cancel,
+		running:     make(chan bool, 1),
+		workerSize:  workerSize,
+		ginServer:   gin_http.NewServer(),
+		authEnabled: true,
 	}
 	return gw
+}
+
+func (m *HttpGateway) SetAuthEnabled() {
+	m.authEnabled = true
+}
+
+func (m *HttpGateway) SetAuthDisabled() {
+	m.authEnabled = false
 }
 
 func (m *HttpGateway) SetSecurity(security gateway.Security) {

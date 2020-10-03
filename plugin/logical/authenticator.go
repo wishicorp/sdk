@@ -16,6 +16,10 @@ var ErrAuthorizationTokenInvalid = errors.New("Authorization token invalid")
 //验证信息
 type Authorized map[string]interface{}
 
+func NewAuthorized(auth interface{}) Authorized {
+	return Authorized{Authorization: auth}
+}
+
 func (a Authorized) Encode() ([]byte, error) {
 	return jsonutil.EncodeJSON(a)
 }

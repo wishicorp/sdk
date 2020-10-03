@@ -2,6 +2,7 @@ package http_gateway
 
 import (
 	"context"
+	"fmt"
 	"github.com/wishicorp/sdk/helper/jsonutil"
 	"github.com/wishicorp/sdk/plugin/logical"
 	"github.com/wishicorp/sdk/plugin/pluginregister"
@@ -46,16 +47,22 @@ func (m *HttpGateway) backend() func(i interface{}) (interface{}, error) {
 
 		backend.Incr()
 		defer backend.DeIncr()
+		if m.authEnabled && m.authMethod != nil {
+			authReply, err := m.authorization(backend, data.request)
+			if err != nil {
+				return nil, fmt.Errorf("auth: %s", err.Error())
+			}
+			if authReply.ResultCode != 0 {
+				return authReply, nil
+			}
 
-		authorized, err := m.authorization(backend, data.request)
-		if err != nil {
-			return nil, err
+			authBytes, err := jsonutil.EncodeJSON(authReply.Data)
+			if nil != err {
+				return nil, err
+			}
+			data.request.Authorization = authBytes
 		}
-		authBytes, err := authorized.Encode()
-		if nil != err {
-			return nil, logical.ErrAuthorizationTokenInvalid
-		}
-		data.request.Authorization = authBytes
+
 		result, err = backend.HandleRequest(context.Background(), data.request)
 
 		return result, err

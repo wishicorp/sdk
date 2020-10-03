@@ -41,7 +41,9 @@ message RequestArgs{
   string backend = 1;
   string namespace = 2;
   string operation = 3;
-  bytes data = 5;
+  string token = 4;
+  bytes Authorization = 5;
+  bytes data = 6;
 }
 
 message Result {

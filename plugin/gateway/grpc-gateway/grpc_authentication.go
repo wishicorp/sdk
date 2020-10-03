@@ -1,4 +1,4 @@
-package http_gateway
+package grpc_gateway
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 )
 
 //获取插件的操作名称
-func (m *HttpGateway) getSchema(backend logical.Backend, request *logical.Request) (
+func (m *GRPCGatewayImpl) getSchema(backend logical.Backend, request *logical.Request) (
 	*logical.Schema, error) {
 
 	result, err := backend.SchemaRequest(context.Background())
@@ -31,7 +31,9 @@ func (m *HttpGateway) getSchema(backend logical.Backend, request *logical.Reques
 	}
 	return nil, framework.ErrOperationNotExists
 }
-func (m *HttpGateway) authorization(backend logical.Backend, request *logical.Request) (authResp *logical.Response, err error) {
+
+//
+func (m *GRPCGatewayImpl) authorization(backend logical.Backend, request *logical.Request) (authResp *logical.Response, err error) {
 	defer func() {
 		if err != nil {
 			m.logger.Error("authorization", "request", request, "err", err)
@@ -63,7 +65,7 @@ func (m *HttpGateway) authorization(backend logical.Backend, request *logical.Re
 		Data:          request.Data,
 		Connection:    request.Connection,
 	}
-	authResp, err = authBackend.HandleRequest(m.ctx, &authReq)
+	authResp, err = authBackend.HandleRequest(context.Background(), &authReq)
 	if nil != err {
 		return nil, err
 	}

@@ -23,6 +23,8 @@ type RequestArgs struct {
 type Gateway interface {
 	SetSecurity(security Security)
 	SetAuthMethod(method string) error
+	SetAuthEnabled()
+	SetAuthDisabled()
 	Shutdown()
 	Running() <-chan bool
 	Listen(addr string, port uint) error

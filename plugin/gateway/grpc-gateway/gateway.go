@@ -20,21 +20,35 @@ import (
 var _ gateway.Gateway = (*GRPCGateway)(nil)
 
 type GRPCGateway struct {
-	pm         *pluginregister.PluginManager
-	logger     hclog.Logger
-	workerPool *pool.WorkerPool
-	ctx        context.Context
-	cancel     context.CancelFunc
-	running    chan bool
-	workerSize int
-	security   gateway.Security
-	grpcServer *grpc.Server
-	tcpListen  *net.TCPListener
-	impl       proto.RpcGatewayServer
-	authMethod *gateway.Method
+	pm          *pluginregister.PluginManager
+	logger      hclog.Logger
+	workerPool  *pool.WorkerPool
+	ctx         context.Context
+	cancel      context.CancelFunc
+	running     chan bool
+	workerSize  int
+	security    gateway.Security
+	grpcServer  *grpc.Server
+	tcpListen   *net.TCPListener
+	impl        proto.RpcGatewayServer
+	authMethod  *gateway.Method
+	authEnabled bool
+}
+
+func (m *GRPCGateway) SetAuthEnabled() {
+	m.authEnabled = true
+}
+
+func (m *GRPCGateway) SetAuthDisabled() {
+	m.authEnabled = false
 }
 
 func (m *GRPCGateway) SetAuthMethod(method string) error {
+	defer func() {
+		proto.RegisterRpcGatewayServer(m.grpcServer, m.NewGRPCGatewayImpl())
+		reflection.Register(m.grpcServer)
+	}()
+
 	if method == "" {
 		return nil
 	}
@@ -47,6 +61,7 @@ func (m *GRPCGateway) SetAuthMethod(method string) error {
 		Namespace: methods[1],
 		Operation: methods[2],
 	}
+
 	return nil
 }
 
@@ -57,23 +72,18 @@ func (m *GRPCGateway) SetSecurity(security gateway.Security) {
 func NewGateway(m *pluginregister.PluginManager, workerSize int, logger hclog.Logger) *GRPCGateway {
 	ctx, cancel := context.WithCancel(context.Background())
 	gw := &GRPCGateway{
-		pm:         m,
-		logger:     logger.Named("rpc-gateway"),
-		ctx:        ctx,
-		cancel:     cancel,
-		running:    make(chan bool, 1),
-		workerSize: workerSize,
+		pm:          m,
+		logger:      logger.Named("rpc-gateway"),
+		ctx:         ctx,
+		cancel:      cancel,
+		running:     make(chan bool, 1),
+		workerSize:  workerSize,
+		authEnabled: true,
 	}
 	var opts []grpc.ServerOption
 	opts = append(opts, grpc.MaxRecvMsgSize(math.MaxInt32))
 	opts = append(opts, grpc.MaxSendMsgSize(math.MaxInt32))
 	gw.grpcServer = grpc.NewServer(opts...)
-
-	reflection.Register(gw.grpcServer)
-
-	proto.RegisterRpcGatewayServer(gw.grpcServer, gw.NewGRPCGatewayImpl())
-
-	gw.startWorkerPool(gw.workerSize)
 
 	return gw
 }

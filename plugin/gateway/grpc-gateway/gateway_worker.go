@@ -10,7 +10,6 @@ func (m *GRPCGateway) startWorkerPool(workerSize int) {
 	m.workerPool = pool.NewWorkerPool("pool-0", context.Background(), poolLogger)
 
 	for i := 0; i < workerSize; i++ {
-		m.workerPool.NewWorker(m.backend)
 	}
 
 	m.workerPool.StartWorkers()
