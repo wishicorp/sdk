@@ -5,7 +5,7 @@ import (
 	"github.com/wishicorp/sdk/helper/jsonutil"
 )
 
-const Authorization = "Authorization"
+const Authorization = "authorization"
 const AuthTokenName = "x-auth-token"
 
 var ErrAuthMethodRequired = errors.New("Authorization method required")

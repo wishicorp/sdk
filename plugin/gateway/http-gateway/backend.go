@@ -24,12 +24,12 @@ func (m *HttpGateway) backend() func(i interface{}) (interface{}, error) {
 			if nil != err {
 				m.logger.Error("backend", "id", data.request.ID,
 					"name", backendName, "namespace", data.request.Namespace, "status", "finished",
-					"resp", jsonutil.EncodeToString(result), "err", err, "took", time.Since(then))
+					"err", err, "took", time.Since(then))
 			} else {
 				if m.logger.IsTrace() {
 					m.logger.Trace("backend", "id", data.request.ID,
 						"name", backendName, "namespace", data.request.Namespace, "status", "finished",
-						"resp", jsonutil.EncodeToString(result), "took", time.Since(then))
+						"took", time.Since(then))
 				}
 			}
 		}(time.Now())

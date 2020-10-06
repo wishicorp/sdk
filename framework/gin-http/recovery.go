@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	httputil2 "github.com/wishicorp/sdk/helper/httputil"
 	"io"
 	"io/ioutil"
 	"log"
@@ -77,8 +76,7 @@ func RecoveryWithWriter(out io.Writer) gin.HandlerFunc {
 					c.Error(err.(error)) // nolint: errcheck
 					c.Abort()
 				} else {
-					c.SecureJSON(200, httputil2.ErrorResponse(
-						int(RequestFailed), err.(error).Error()))
+					c.SecureJSON(200, err.(error).Error())
 				}
 			}
 		}()

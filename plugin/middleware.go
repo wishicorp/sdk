@@ -55,8 +55,7 @@ func (b *backendTracingMiddleware) HandleRequest(ctx context.Context, req *logic
 	if b.next.Logger().IsTrace() {
 		defer func(then time.Time) {
 			b.logger.Trace("handle request", "path", req.Namespace,
-				"status", "finished", "err", err, "took", time.Since(then),
-				"resp", jsonutil.EncodeToString(resp))
+				"status", "finished", "err", err, "took", time.Since(then))
 		}(time.Now())
 
 		b.logger.Trace("handle request",

@@ -10,9 +10,7 @@ type pagination struct {
 
 // http返回数据结构
 type Response struct {
-	Code       int         `json:"code"`
 	Result     interface{} `json:"result,omitempty"`
-	Message    string      `json:"message,omitempty"`
 	Pagination *pagination `json:"pagination,omitempty"`
 }
 
@@ -27,14 +25,9 @@ func Pagination(total int, page *Pageable) *pagination {
 	}
 	return &pagination{Total: total, TotalPages: totalPages, Page: page.Page(), Size: page.Size()}
 }
-func PageResponse(pagination *pagination, data interface{}) *Response {
-	return &Response{Code: 0, Pagination: pagination, Result: data}
+func NewPageResponse(pagination *pagination, data interface{}) *Response {
+	return &Response{Pagination: pagination, Result: data}
 }
-
-func ErrorResponse(code int, message string) *Response {
-	return &Response{Code: code, Message: message}
-}
-
-func SuccessResponse(data interface{}) *Response {
-	return &Response{Code: 0, Result: data}
+func NewResponse(data interface{}) *Response {
+	return &Response{Result: data}
 }

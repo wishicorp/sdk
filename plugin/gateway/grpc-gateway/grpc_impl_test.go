@@ -16,16 +16,15 @@ func TestNewGateway(t *testing.T) {
 	defer conn.Close()
 	cli := gwproto.NewRpcGatewayClient(conn)
 	args := gwproto.RequestArgs{
-		Backend:   "account",
-		Namespace: "user",
-		Operation: "home",
-		Token:     "062ad5fc-c643-44e6-a916-b29f8bc4384c",
-		Data:      []byte{},
+		Backend:   "admin",
+		Namespace: "order",
+		Operation: "list",
+		Token:     "94e855c5-35af-43d7-9f6c-1ab4a2a6af28",
 	}
 	time.Sleep(time.Second)
 	reply, err := cli.ExecRequest(context.Background(), &args)
 	if nil != err {
 		t.Fatal(err)
 	}
-	t.Log(string(reply.Result.Data))
+	t.Log(reply, string(reply.Result.Data))
 }

@@ -23,6 +23,7 @@ type Server struct {
 
 func NewServer() *Server {
 	s := gin.New()
+	s.Use(CORSMiddleware())
 	return &Server{Router: s}
 }
 

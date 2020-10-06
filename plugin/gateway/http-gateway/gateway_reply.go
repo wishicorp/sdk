@@ -2,7 +2,6 @@ package http_gateway
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/wishicorp/sdk/helper/jsonutil"
 	"github.com/wishicorp/sdk/plugin"
 	"github.com/wishicorp/sdk/plugin/gateway"
 	"github.com/wishicorp/sdk/plugin/gateway/consts"
@@ -53,7 +52,6 @@ func (m *HttpGateway) traceReply(c *gin.Context, resp *workerReply) {
 			"path", c.Request.RequestURI,
 			"method", c.Request.Method,
 			"client", GetRemoteAddr(c),
-			"response", jsonutil.EncodeToString(resp.result),
 			"err", resp.err,
 		)
 	}
