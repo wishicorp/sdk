@@ -46,7 +46,7 @@ func (m *HttpGateway) authorization(backend logical.Backend, request *logical.Re
 		return &logical.Response{
 			ResultCode: 0,
 			ResultMsg:  "",
-			Data:       &logical.Authorized{},
+			Content:    &logical.Content{Data: &logical.Authorized{}},
 		}, nil
 	}
 	authBackend, has := m.pm.GetBackend(m.authMethod.Backend)

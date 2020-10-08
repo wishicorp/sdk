@@ -168,7 +168,7 @@ func LogicalResponseToProtoResponse(r *logical.Response) (*HandlerResponse, erro
 		return nil, nil
 	}
 
-	buf, err := json.Marshal(r.Data)
+	buf, err := json.Marshal(r.Content)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +190,7 @@ func ProtoResponseToLogicalResponse(r *HandlerResponse) (*logical.Response, erro
 		return nil, nil
 	}
 
-	data := map[string]interface{}{}
+	data := logical.Content{}
 	err := json.Unmarshal([]byte(r.Data), &data)
 	if err != nil {
 		return nil, err
@@ -207,7 +207,7 @@ func ProtoResponseToLogicalResponse(r *HandlerResponse) (*logical.Response, erro
 	return &logical.Response{
 		ResultCode: r.ResultCode,
 		ResultMsg:  r.ResultMsg,
-		Data:       data,
+		Content:    &data,
 		Headers:    headers,
 	}, nil
 }

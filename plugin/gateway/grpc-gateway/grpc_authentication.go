@@ -48,7 +48,7 @@ func (m *GRPCGatewayImpl) authorization(backend logical.Backend, request *logica
 		return &logical.Response{
 			ResultCode: 0,
 			ResultMsg:  "",
-			Data:       &logical.Authorized{},
+			Content:    &logical.Content{Data: &logical.Authorized{}},
 		}, nil
 	}
 	authBackend, has := m.pm.GetBackend(m.authMethod.Backend)

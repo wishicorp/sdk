@@ -96,7 +96,7 @@ func (m *GRPCGatewayImpl) ExecRequest(ctx context.Context, args *gwproto.Request
 			}, nil
 		}
 
-		authBytes, err := jsonutil.EncodeJSON(authReply.Data)
+		authBytes, err := jsonutil.EncodeJSON(authReply.Content.Data)
 		if nil != err {
 			return nil, err
 		}
@@ -108,7 +108,7 @@ func (m *GRPCGatewayImpl) ExecRequest(ctx context.Context, args *gwproto.Request
 		return nil, err
 	}
 
-	data, err := jsonutil.EncodeJSON(reply.Data)
+	data, err := jsonutil.EncodeJSON(reply.Content)
 	return &gwproto.RequestReply{
 		Result: &gwproto.Result{
 			ResultCode: int32(reply.ResultCode),

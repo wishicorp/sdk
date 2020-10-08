@@ -56,7 +56,7 @@ func (m *HttpGateway) backend() func(i interface{}) (interface{}, error) {
 				return authReply, nil
 			}
 
-			authBytes, err := jsonutil.EncodeJSON(authReply.Data)
+			authBytes, err := jsonutil.EncodeJSON(authReply.Content.Data)
 			if nil != err {
 				return nil, err
 			}
@@ -64,7 +64,7 @@ func (m *HttpGateway) backend() func(i interface{}) (interface{}, error) {
 		}
 
 		result, err = backend.HandleRequest(context.Background(), data.request)
-
+		m.logger.Info("back", result, err)
 		return result, err
 	}
 }
