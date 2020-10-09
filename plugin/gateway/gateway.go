@@ -14,10 +14,10 @@ type Method struct {
 type RequestArgs struct {
 	Method    string `json:"method" binding:"required"` //${backend}.${namespace}.${operation}
 	Version   string `json:"version" binding:"required"`
-	Timestamp int    `json:"timestamp" binding:"required"`
+	Timestamp string `json:"timestamp" binding:"required"`
 	SignType  string `json:"sign_type" binding:"required"`
 	Sign      string `json:"sign" binding:"required"`
-	Data      string `json:"data"`
+	Data      string `json:"data" binding:"required"`
 }
 
 type Gateway interface {

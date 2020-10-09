@@ -114,6 +114,7 @@ func (m *HttpGateway) Listen(addr string, port uint) error {
 func (m *HttpGateway) Serve() error {
 	m.startWorkerPool(m.workerSize)
 	m.api()
+	m.open()
 	m.schemas()
 	return m.ginServer.Serve()
 }

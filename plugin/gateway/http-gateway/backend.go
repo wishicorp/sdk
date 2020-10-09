@@ -19,7 +19,6 @@ func (m *HttpGateway) backend() func(i interface{}) (interface{}, error) {
 	return func(i interface{}) (result interface{}, err error) {
 		data := i.(*workData)
 		backendName := data.backend
-
 		defer func(then time.Time) {
 			if nil != err {
 				m.logger.Error("backend", "id", data.request.ID,
@@ -64,7 +63,6 @@ func (m *HttpGateway) backend() func(i interface{}) (interface{}, error) {
 		}
 
 		result, err = backend.HandleRequest(context.Background(), data.request)
-		m.logger.Info("back", result, err)
 		return result, err
 	}
 }

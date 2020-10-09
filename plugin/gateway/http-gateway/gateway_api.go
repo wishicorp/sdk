@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/wishicorp/sdk/helper/jsonutil"
 	"github.com/wishicorp/sdk/plugin/gateway"
 	"github.com/wishicorp/sdk/plugin/gateway/consts"
 	"github.com/wishicorp/sdk/plugin/logical"
@@ -11,6 +12,51 @@ import (
 	"strings"
 )
 
+func (m *HttpGateway) open() {
+	m.ginServer.Router.POST("/open", func(c *gin.Context) {
+		request := new(gateway.RequestArgs)
+		if err := c.ShouldBindJSON(request); err != nil {
+			c.SecureJSON(200, gateway.Error(consts.ReplyCodeFailure, err.Error()))
+			return
+		}
+		methods := strings.Split(request.Method, ".")[:]
+		if len(methods) != 3 {
+			c.SecureJSON(200,
+				gateway.Error(consts.ReplyCodeMethodInvalid, "method error"))
+			return
+		}
+		method := gateway.Method{
+			Backend:   methods[0],
+			Namespace: methods[1],
+			Operation: methods[2],
+		}
+
+		if m.security != nil {
+			if !m.security.SignVerify(request) {
+				c.SecureJSON(200,
+					gateway.Error(consts.ReplyCodeSignInvalid, "invalid sign"))
+				return
+			}
+			client := &gateway.Client{
+				RemoteAddr: GetRemoteAddr(c),
+				Referer:    c.Request.Referer(),
+				UserAgent:  c.Request.UserAgent(),
+			}
+			if err := m.security.Blocker(&method, client); err != nil {
+				c.SecureJSON(200,
+					gateway.Error(consts.ReplyCodeReqBlocked, err.Error()))
+				return
+			}
+
+			if err := m.security.RateLimiter(&method, client); err != nil {
+				c.SecureJSON(200, gateway.Error(consts.ReplyCodeRateLimited, err.Error()))
+				return
+			}
+		}
+		bs, _ := jsonutil.EncodeJSON(request)
+		m.invokeRequest(c, method, string(bs))
+	})
+}
 func (m *HttpGateway) api() {
 	m.ginServer.Router.POST("/api", func(c *gin.Context) {
 		request := new(gateway.RequestArgs)
@@ -54,6 +100,7 @@ func (m *HttpGateway) api() {
 		}
 		m.invokeRequest(c, method, request.Data)
 	})
+
 }
 
 func (m *HttpGateway) schemas() {
@@ -96,7 +143,6 @@ func (m *HttpGateway) schemas() {
 }
 
 func (m *HttpGateway) invokeRequest(c *gin.Context, method gateway.Method, data string) {
-
 	request := &logical.Request{
 		ID:        uuid.New().String(),
 		Namespace: method.Namespace,
@@ -104,7 +150,8 @@ func (m *HttpGateway) invokeRequest(c *gin.Context, method gateway.Method, data 
 		Data: map[string][]byte{
 			"data": []byte(data),
 		},
-		Token: c.Request.Header.Get(logical.AuthTokenName),
+		Headers: c.Request.Header,
+		Token:   c.Request.Header.Get(logical.AuthTokenName),
 		Connection: &logical.Connection{
 			RemoteAddr: GetRemoteAddr(c),
 			ConnState:  c.Request.TLS,

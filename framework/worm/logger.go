@@ -60,7 +60,6 @@ func (s *SQLLogger) Level() core.LogLevel {
 }
 
 func (s *SQLLogger) SetLevel(l core.LogLevel) {
-	s.log.SetLevel(hclog.Info)
 }
 
 func (s *SQLLogger) ShowSQL(show ...bool) {
