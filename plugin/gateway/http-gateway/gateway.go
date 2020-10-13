@@ -115,6 +115,6 @@ func (m *HttpGateway) Serve() error {
 	m.startWorkerPool(m.workerSize)
 	m.api()
 	m.open()
-	m.schemas()
+	//m.schemas()
 	return m.ginServer.Serve()
 }
