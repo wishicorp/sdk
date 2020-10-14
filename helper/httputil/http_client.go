@@ -59,7 +59,13 @@ type client struct {
 }
 
 func DefaultClient() Client {
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true, //跳过验证服务端证书
+		},
+	}
 	cli := &http.Client{Timeout: DefaultHttpTimeout}
+	cli.Transport = transport
 	defer cli.CloseIdleConnections()
 	return &client{client: cli, Headers: make(map[string]string)}
 }

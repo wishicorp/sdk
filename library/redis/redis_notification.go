@@ -72,7 +72,7 @@ func NewNotification(node, key string, cache RedisCli, policies []time.Duration)
 
 func (n *notification) PutNotification(p *Payload) {
 	setKey := fmt.Sprintf("%s-%s:%s", retryKeyPrefix, n.key, p.String())
-	_ = n.cache.Set(context.Background(), setKey, []byte(p.Value), n.policies[p.count].String())
+	_ = n.cache.Set(context.Background(), setKey, []byte{1}, n.policies[p.count].String())
 }
 
 func (n *notification) lock(p *Payload) bool {
