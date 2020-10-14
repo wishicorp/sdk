@@ -97,7 +97,7 @@ func Sign(signType SignType, key string, params Params, withKey bool) string {
 		buf.WriteString(`key=`)
 	}
 	buf.WriteString(key)
-
+	fmt.Println(buf.String())
 	return sign(signType, key, buf)
 
 }
