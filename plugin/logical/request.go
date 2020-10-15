@@ -10,14 +10,14 @@ import (
 var ErrInvalidData = errors.New("invalid request data")
 
 type Request struct {
-	ID            string              `json:"id" structs:"id" mapstructure:"id"`
-	Operation     Operation           `json:"operation" structs:"operation" mapstructure:"operation"`
-	Namespace     string              `json:"namespace" structs:"path" mapstructure:"namespace"`
-	Data          map[string][]byte   `json:"map" structs:"data" mapstructure:"data"`
-	Authorization []byte              `json:"authorization" structs:"authorization" mapstructure:"authorization"`
-	Token         string              `json:"token" structs:"token" mapstructure:"token"`
-	Headers       map[string][]string `json:"headers" structs:"headers" mapstructure:"headers"`
-	Connection    *Connection         `json:"connection" structs:"connection" mapstructure:"connection"`
+	ID         string              `json:"id" structs:"id" mapstructure:"id"`
+	Operation  Operation           `json:"operation" structs:"operation" mapstructure:"operation"`
+	Namespace  string              `json:"namespace" structs:"path" mapstructure:"namespace"`
+	Data       map[string][]byte   `json:"map" structs:"data" mapstructure:"data"`
+	Authorized *Authorized         `json:"authorized" structs:"authorized" mapstructure:"authorized"`
+	Token      string              `json:"token" structs:"token" mapstructure:"token"`
+	Headers    map[string][]string `json:"headers" structs:"headers" mapstructure:"headers"`
+	Connection *Connection         `json:"connection" structs:"connection" mapstructure:"connection"`
 }
 
 func (r *Request) GetData() []byte {
@@ -39,10 +39,11 @@ func (r *Request) Decode(out interface{}) error {
 	return jsonutil.DecodeJSON(input, out)
 }
 
-func (r *Request) DecodeAuthorized() *Authorized {
-	auth := new(Authorized)
-	jsonutil.DecodeJSON(r.Authorization, auth)
-	return auth
+func (r *Request) GetAuthorized() *Authorized {
+	return r.Authorized
+}
+func (r *Request) SetAuthorized(a *Authorized) {
+	r.Authorized = a
 }
 
 // Clone returns a deep copy of the request by using copystructure

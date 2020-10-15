@@ -42,7 +42,7 @@ message RequestArgs{
   string namespace = 2;
   string operation = 3;
   string token = 4;
-  bytes Authorization = 5;
+  bytes authorized = 5;
   bytes data = 6;
 }
 

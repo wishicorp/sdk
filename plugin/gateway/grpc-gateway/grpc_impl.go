@@ -72,11 +72,14 @@ func (m *GRPCGatewayImpl) ExecRequest(ctx context.Context, args *gwproto.Request
 	backend.Incr()
 	defer backend.DeIncr()
 	req := &logical.Request{
-		Operation:     logical.Operation(args.Operation),
-		Namespace:     args.Namespace,
-		Token:         args.Token,
-		Authorization: args.Authorization,
+		Operation: logical.Operation(args.Operation),
+		Namespace: args.Namespace,
+		Token:     args.Token,
 	}
+	if err := jsonutil.DecodeJSON(args.Authorized, &req.Authorized); err != nil {
+		return nil, err
+	}
+
 	if args.Data != nil {
 		req.Data = map[string][]byte{"data": args.Data}
 	} else {
@@ -95,12 +98,9 @@ func (m *GRPCGatewayImpl) ExecRequest(ctx context.Context, args *gwproto.Request
 				},
 			}, nil
 		}
-
-		authBytes, err := jsonutil.EncodeJSON(authReply.Content.Data)
-		if nil != err {
+		if err := jsonutil.Swap(authReply.Content.Data, &req.Authorized); err != nil {
 			return nil, err
 		}
-		req.Authorization = authBytes
 	}
 
 	reply, err := backend.HandleRequest(ctx, req)

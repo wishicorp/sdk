@@ -5,8 +5,8 @@ import (
 	"github.com/wishicorp/sdk/helper/jsonutil"
 )
 
-const Authorization = "authorization"
 const AuthTokenName = "x-auth-token"
+const Authorization = "authorization"
 
 var ErrAuthMethodRequired = errors.New("Authorization method required")
 var ErrAuthMethodNotFound = errors.New("Authorization method not found")
@@ -14,19 +14,25 @@ var ErrAuthorizationTokenRequired = errors.New("Authorization token required")
 var ErrAuthorizationTokenInvalid = errors.New("Authorization token invalid")
 
 //验证信息
-type Authorized map[string]interface{}
+type Authorized struct {
+	ID            interface{} `json:"id" name:"账户ID"`
+	Authorization string      `json:"authorization" name:"authorization token"`
+	Principal     Principal   `json:"principal" name:"账户凭证(用户信息)"`
+}
+type Principal map[string]interface{}
 
-func NewAuthorized(auth interface{}) Authorized {
-	return Authorized{Authorization: auth}
+func NewAuthorized(id interface{}, authorization string, principal Principal) Authorized {
+	return Authorized{ID: id, Authorization: authorization, Principal: principal}
 }
 
 func (a Authorized) Encode() ([]byte, error) {
 	return jsonutil.EncodeJSON(a)
 }
 
-func (a Authorized) GetAuthorizer() interface{} {
-	return a[Authorization]
+func (a Authorized) GetPrincipal() Principal {
+	return a.Principal
 }
-func (a Authorized) SetAuthorizer(in interface{}) {
-	a[Authorization] = in
+
+func (a Authorized) SetPrincipal(in Principal) {
+	a.Principal = in
 }

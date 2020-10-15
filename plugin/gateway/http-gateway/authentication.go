@@ -56,12 +56,11 @@ func (m *HttpGateway) authorization(backend logical.Backend, request *logical.Re
 	}
 
 	authReq := logical.Request{
-		Operation:     logical.Operation(m.authMethod.Operation),
-		Namespace:     m.authMethod.Namespace,
-		Authorization: nil,
-		Token:         request.Token,
-		Data:          request.Data,
-		Connection:    request.Connection,
+		Operation:  logical.Operation(m.authMethod.Operation),
+		Namespace:  m.authMethod.Namespace,
+		Token:      request.Token,
+		Data:       request.Data,
+		Connection: request.Connection,
 	}
 	authResp, err = authBackend.HandleRequest(m.ctx, &authReq)
 	if nil != err {

@@ -58,12 +58,11 @@ func (m *GRPCGatewayImpl) authorization(backend logical.Backend, request *logica
 	}
 
 	authReq := logical.Request{
-		Operation:     logical.Operation(m.authMethod.Operation),
-		Namespace:     m.authMethod.Namespace,
-		Authorization: nil,
-		Token:         request.Token,
-		Data:          request.Data,
-		Connection:    request.Connection,
+		Operation:  logical.Operation(m.authMethod.Operation),
+		Namespace:  m.authMethod.Namespace,
+		Token:      request.Token,
+		Data:       request.Data,
+		Connection: request.Connection,
 	}
 	authResp, err = authBackend.HandleRequest(context.Background(), &authReq)
 	if nil != err {

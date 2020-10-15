@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/wishicorp/sdk/helper/errutil"
+	"github.com/wishicorp/sdk/helper/jsonutil"
 	"github.com/wishicorp/sdk/plugin/logical"
 )
 
@@ -106,15 +107,18 @@ func LogicalRequestToProtoRequest(r *logical.Request) (*Request, error) {
 	for k, v := range r.Headers {
 		headers[k] = &Header{Header: v}
 	}
-
+	authBytes, err := jsonutil.EncodeJSON(r.Authorized)
+	if nil != err {
+		return nil, err
+	}
 	return &Request{
-		Id:            r.ID,
-		Operation:     string(r.Operation),
-		Namespace:     r.Namespace,
-		Data:          r.Data,
-		Token:         r.Token,
-		Authorization: r.Authorization,
-		Headers:       headers,
+		Id:         r.ID,
+		Operation:  string(r.Operation),
+		Namespace:  r.Namespace,
+		Data:       r.Data,
+		Token:      r.Token,
+		Authorized: authBytes,
+		Headers:    headers,
 	}, nil
 }
 
@@ -130,16 +134,19 @@ func ProtoRequestToLogicalRequest(r *Request) (*logical.Request, error) {
 			headers[k] = v.Header
 		}
 	}
-
+	var authorized logical.Authorized
+	if err := jsonutil.DecodeJSON(r.Authorized, authorized); err != nil {
+		return nil, err
+	}
 	return &logical.Request{
-		ID:            r.Id,
-		Operation:     logical.Operation(r.Operation),
-		Namespace:     r.Namespace,
-		Token:         r.Token,
-		Authorization: r.Authorization,
-		Data:          r.Data,
-		Headers:       headers,
-		Connection:    ProtoConnectionToLogicalConnection(r.Connection),
+		ID:         r.Id,
+		Operation:  logical.Operation(r.Operation),
+		Namespace:  r.Namespace,
+		Token:      r.Token,
+		Authorized: &authorized,
+		Data:       r.Data,
+		Headers:    headers,
+		Connection: ProtoConnectionToLogicalConnection(r.Connection),
 	}, nil
 }
 

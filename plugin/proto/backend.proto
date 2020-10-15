@@ -31,7 +31,7 @@ message Request {
   string operation = 2;
   string namespace = 3;
   string token = 4;
-  bytes authorization = 5;
+  bytes authorized = 5;
   map<string, bytes> data = 6;
   Connection connection = 7;
   map<string, Header> headers = 8;

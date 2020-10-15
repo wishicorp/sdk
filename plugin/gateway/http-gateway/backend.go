@@ -54,12 +54,9 @@ func (m *HttpGateway) backend() func(i interface{}) (interface{}, error) {
 			if authReply.ResultCode != 0 {
 				return authReply, nil
 			}
-
-			authBytes, err := jsonutil.EncodeJSON(authReply.Content.Data)
-			if nil != err {
+			if err := jsonutil.Swap(authReply.Content.Data, &data.request.Authorized); err != nil {
 				return nil, err
 			}
-			data.request.Authorization = authBytes
 		}
 
 		result, err = backend.HandleRequest(context.Background(), data.request)
