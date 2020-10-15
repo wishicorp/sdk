@@ -3,8 +3,10 @@ package logical
 import (
 	"errors"
 	"fmt"
+	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/copystructure"
 	"github.com/wishicorp/sdk/helper/jsonutil"
+	"strings"
 )
 
 var ErrInvalidData = errors.New("invalid request data")
@@ -36,9 +38,25 @@ func (r *Request) Decode(out interface{}) error {
 	if !ok {
 		return ErrInvalidData
 	}
-	return jsonutil.DecodeJSON(input, out)
+	err := jsonutil.DecodeJSON(input, out)
+	if err != nil {
+		return err
+	}
+	return r.Validate(out)
 }
 
+func (r *Request) Validate(in interface{}) error {
+	err := validator.New().Struct(in)
+	if err != nil {
+		ferr := err.(validator.ValidationErrors)
+		var fs []string
+		for _, fieldError := range ferr {
+			fs = append(fs, fieldError.Field())
+		}
+		return fmt.Errorf("缺少参数: %s", strings.Join(fs, ", "))
+	}
+	return nil
+}
 func (r *Request) GetAuthorized() *Authorized {
 	return r.Authorized
 }
