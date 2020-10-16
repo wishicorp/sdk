@@ -22,7 +22,7 @@ type Server struct {
 }
 
 func NewServer() *Server {
-	s := gin.New()
+	s := gin.Default()
 	return &Server{Router: s}
 }
 
