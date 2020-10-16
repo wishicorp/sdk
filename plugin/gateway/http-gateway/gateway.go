@@ -96,6 +96,10 @@ func (m *HttpGateway) Running() <-chan bool {
 	return m.running
 }
 
+func (m *HttpGateway) Router() *gin_http.Server {
+	return m.ginServer
+}
+
 func (m *HttpGateway) AddRouter(method, router string, handleFunc func(*gin.Context) error) {
 	m.ginServer.Router.Handle(method, router, func(c *gin.Context) {
 		err := handleFunc(c)
