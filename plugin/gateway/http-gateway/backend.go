@@ -22,12 +22,16 @@ func (m *HttpGateway) backend() func(i interface{}) (interface{}, error) {
 		defer func(then time.Time) {
 			if nil != err {
 				m.logger.Error("backend", "id", data.request.ID,
-					"name", backendName, "namespace", data.request.Namespace, "status", "finished",
+					"name", backendName, "namespace", data.request.Namespace,
+					"operation", data.request.Operation,
+					"status", "finished",
 					"err", err, "took", time.Since(then))
 			} else {
 				if m.logger.IsTrace() {
 					m.logger.Trace("backend", "id", data.request.ID,
-						"name", backendName, "namespace", data.request.Namespace, "status", "finished",
+						"name", backendName, "namespace", data.request.Namespace,
+						"operation", data.request.Operation,
+						"status", "finished",
 						"took", time.Since(then))
 				}
 			}
@@ -35,7 +39,7 @@ func (m *HttpGateway) backend() func(i interface{}) (interface{}, error) {
 
 		if m.logger.IsTrace() {
 			m.logger.Trace("backend", "id", data.request.ID, "name", backendName,
-				"namespace", data.request.Namespace,
+				"namespace", data.request.Namespace, "operation", data.request.Operation,
 				"status", "started", "request", jsonutil.EncodeToString(data.request))
 		}
 
