@@ -16,7 +16,7 @@ import (
 // /config/{APP_NAME},{PROFILE}/{DATA_KEY}
 func (c *client) LoadConfig(out interface{}) error {
 	if c.config.Config.DataKey == "" {
-		c.config.Config.DataKey = "1.0.0"
+		c.config.Config.DataKey = "data"
 	}
 	cfg := c.config.Config
 	app := c.config.Application

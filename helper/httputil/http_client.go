@@ -6,14 +6,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"encoding/xml"
-	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
-	"strings"
 	"sync"
 	"time"
 )
@@ -44,17 +39,16 @@ const (
 const DefaultHttpTimeout = 30 * time.Second
 
 type Client interface {
-	SetHeader(h map[string]string)
-	Get(reqUrl string, mediaType MediaType) (ret []byte, err error)
-	Put(reqUrl string, mediaType MediaType, data interface{}) (ret []byte, err error)
-	Post(reqUrl string, mediaType MediaType, data interface{}) (ret []byte, err error)
-	Delete(reqUrl string, mediaType MediaType, data interface{}) (ret []byte, err error)
+	Get(reqUrl string, header http.Header) (ret []byte, err error)
+	Put(reqUrl string, header http.Header, data interface{}) (ret []byte, err error)
+	Post(reqUrl string, header http.Header, data interface{}) (ret []byte, err error)
+	Delete(reqUrl string, header http.Header, data interface{}) (ret []byte, err error)
 }
 
 type client struct {
 	sync.Mutex
 	Timeout time.Duration
-	Headers map[string]string
+	Header  http.Header
 	client  *http.Client
 }
 
@@ -67,10 +61,21 @@ func DefaultClient() Client {
 	cli := &http.Client{Timeout: DefaultHttpTimeout}
 	cli.Transport = transport
 	defer cli.CloseIdleConnections()
-	return &client{client: cli, Headers: make(map[string]string)}
+	return &client{client: cli, Header: make(http.Header)}
+}
+func DefaultClientWithHeader(header http.Header) Client {
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true, //跳过验证服务端证书
+		},
+	}
+	cli := &http.Client{Timeout: DefaultHttpTimeout}
+	cli.Transport = transport
+	defer cli.CloseIdleConnections()
+	return &client{client: cli, Header: header}
 }
 
-func NewClient(transport *http.Transport, timeout time.Duration, headers map[string]string) (Client, error) {
+func NewClient(transport *http.Transport, timeout time.Duration, header http.Header) (Client, error) {
 	cli := &http.Client{
 		Transport: transport,
 		Timeout:   timeout,
@@ -78,11 +83,11 @@ func NewClient(transport *http.Transport, timeout time.Duration, headers map[str
 	defer cli.CloseIdleConnections()
 
 	return &client{
-		Headers: headers,
-		client:  cli,
+		Header: header,
+		client: cli,
 	}, nil
 }
-func NewHttpsClient(certPEMBlock, keyPEMBlock []byte, timeout time.Duration, headers map[string]string) (Client, error) {
+func NewHttpsClient(certPEMBlock, keyPEMBlock []byte, timeout time.Duration, header http.Header) (Client, error) {
 	pool := x509.NewCertPool()
 	cliCrt, err := tls.X509KeyPair(certPEMBlock, keyPEMBlock)
 	if err != nil {
@@ -96,59 +101,61 @@ func NewHttpsClient(certPEMBlock, keyPEMBlock []byte, timeout time.Duration, hea
 		},
 	}
 
-	return NewClient(transport, timeout, headers)
+	return NewClient(transport, timeout, header)
 }
 
-//设置http头
-func (c *client) SetHeader(h map[string]string) {
-	c.Headers = h
-}
+func (c *client) mergeHeader(header http.Header) http.Header {
+	headers := make(http.Header)
+	for k, v := range c.Header {
+		headers[k] = v
+	}
+	if header != nil {
+		for k, v := range header {
+			headers[k] = v
+		}
+	}
 
-func (c *client) Get(reqUrl string, mediaType MediaType) (ret []byte, err error) {
+	return headers
+}
+func (c *client) Get(reqUrl string, header http.Header) (ret []byte, err error) {
 	request, err := http.NewRequest("GET", reqUrl, nil)
 	if nil != err {
 		return nil, err
 	}
 
-	if "" != mediaType {
-		request.Header.Add("Accept", string(mediaType))
-	}
+	request.Header = c.mergeHeader(header)
+
 	return doRequest(c, request)
 }
 
-func (c *client) Put(reqUrl string, mediaType MediaType, data interface{}) (ret []byte, err error) {
-	return c.write(reqUrl, PUT, mediaType, data)
+func (c *client) Put(reqUrl string, header http.Header, data interface{}) (ret []byte, err error) {
+	return c.write(reqUrl, PUT, header, data)
 }
 
-func (c *client) Post(reqUrl string, mediaType MediaType, data interface{}) (ret []byte, err error) {
-	return c.write(reqUrl, POST, mediaType, data)
+func (c *client) Post(reqUrl string, header http.Header, data interface{}) (ret []byte, err error) {
+	return c.write(reqUrl, POST, header, data)
 }
 
-func (c *client) Delete(reqUrl string, mediaType MediaType, data interface{}) (ret []byte, err error) {
-	return c.write(reqUrl, DELETE, mediaType, data)
+func (c *client) Delete(reqUrl string, header http.Header, data interface{}) (ret []byte, err error) {
+	return c.write(reqUrl, DELETE, header, data)
 }
 
-func (c *client) write(reqUrl string, method RequestMethod, mediaType MediaType, data interface{}) (ret []byte, err error) {
-
-	c.Headers["Content-Kind"] = string(mediaType)
-	reader, err := parseReader(mediaType, data)
+func (c *client) write(reqUrl string, method RequestMethod, header http.Header, data interface{}) (ret []byte, err error) {
+	bs, err := json.Marshal(data)
 	if nil != err {
 		return nil, err
 	}
-	request, err := http.NewRequest(string(method), reqUrl, reader)
+	request, err := http.NewRequest(string(method), reqUrl, bytes.NewReader(bs))
 	if err != nil {
 		return nil, err
 	}
+
+	request.Header = c.mergeHeader(header)
+
 	return doRequest(c, request)
 }
 
 func doRequest(c *client, request *http.Request) (ret []byte, err error) {
-	if nil != c.Headers {
-		for k, v := range c.Headers {
-			request.Header.Set(k, v)
-		}
-	}
-
 	resp, err := c.client.Do(request)
 	if err != nil {
 		return nil, err
@@ -166,72 +173,23 @@ func doRequest(c *client, request *http.Request) (ret []byte, err error) {
 	return body, nil
 }
 
-func parseReader(mediaType MediaType, data interface{}) (io.Reader, error) {
-
-	switch data.(type) {
-	case []byte:
-		return bytes.NewReader(data.([]byte)), nil
-	case string:
-		return strings.NewReader(data.(string)), nil
-	default:
-		return toMediaTypeReader(mediaType, data)
-	}
-}
-
-func toMediaTypeReader(mediaType MediaType, data interface{}) (io.Reader, error) {
-
-	switch mediaType {
-	case JSON, JsonUtf8:
-		reqBytes, err := json.Marshal(data)
-		if nil != err {
-			return nil, err
-		}
-		return bytes.NewReader(reqBytes), nil
-	case FORM:
-		reqBytes, err := json.Marshal(data)
-		if nil != err {
-			return nil, err
-		}
-		m := make(map[string]string)
-		err = json.Unmarshal(reqBytes, &m)
-		if nil != err {
-			return nil, err
-		}
-		u := url.Values{}
-		for k, v := range m {
-			u.Add(k, v)
-		}
-		return strings.NewReader(u.Encode()), nil
-
-	case XML, XmlUtf8:
-		reqBytes, err := xml.Marshal(data)
-		if nil != err {
-			return nil, err
-		}
-		fmt.Println(string(reqBytes))
-		return bytes.NewReader(reqBytes), nil
-	default:
-		return nil, errors.New("media type error")
-	}
-}
-
-func Get(url string, mediaType MediaType) (ret []byte, err error) {
+func Get(url string, header http.Header) (ret []byte, err error) {
 	c := DefaultClient()
-	return c.Get(url, mediaType)
+	return c.Get(url, header)
 }
 
-func Put(reqUrl string, mediaType MediaType, data interface{}) (ret []byte, err error) {
+func Put(reqUrl string, header http.Header, data interface{}) (ret []byte, err error) {
 	c := DefaultClient()
-	return c.Put(reqUrl, mediaType, data)
+	return c.Put(reqUrl, header, data)
 }
-func Post(reqUrl string, mediaType MediaType, data interface{}) (ret []byte, err error) {
+func Post(reqUrl string, header http.Header, data interface{}) (ret []byte, err error) {
 	c := DefaultClient()
-	return c.Post(reqUrl, mediaType, data)
+	return c.Post(reqUrl, header, data)
 }
 
-func Delete(reqUrl string, mediaType MediaType, data interface{}) (ret []byte, err error) {
+func Delete(reqUrl string, header http.Header, data interface{}) (ret []byte, err error) {
 	c := DefaultClient()
-	return c.Delete(reqUrl, mediaType, data)
+	return c.Delete(reqUrl, header, data)
 }
 
 func addTrust(pool *x509.CertPool, path string) error {

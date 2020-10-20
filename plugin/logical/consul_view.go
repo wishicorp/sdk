@@ -29,12 +29,20 @@ func NewConsulView(namespace, profile string, consul consul.Client) *ConsulView 
 	}
 }
 
+func (c *ConsulView) GetServiceAddrPort(ctx context.Context, name string, useLan bool, tags string) (host string, port int, err error) {
+	return c.consul.GetServiceAddrPort(name, useLan, tags)
+}
+
+func (c *ConsulView) GetMicroHTTPClient(ctx context.Context, id string, useLan bool, tags string, header map[string][]string) (consul.MicroHTTPClient, error) {
+	return c.consul.GetMicroHTTPClient(id, useLan, tags, header)
+}
+
 func (c *ConsulView) GetConfig(ctx context.Context, key, version string, sandbox bool) ([]byte, error) {
 	var path string
 	if !sandbox {
 		path = fmt.Sprintf("/%s/%s", c.path, key)
 	} else {
-		path = c.ExpendKey(key)
+		path = c.expendKey(key)
 	}
 	if version != "" {
 		path = path + "/" + version
@@ -47,7 +55,7 @@ func (c *ConsulView) GetConfig(ctx context.Context, key, version string, sandbox
 }
 
 func (c *ConsulView) GetService(ctx context.Context, id, tag string) (*api.AgentService, error) {
-	return c.GetService(ctx, id, tag)
+	return c.consul.GetService(id, tag)
 }
 
 func (c *ConsulView) NewSession(ctx context.Context,
@@ -79,7 +87,7 @@ func (c *ConsulView) KVCas(ctx context.Context, p *api.KVPair) (bool, error) {
 	return c.consul.KVCas(p, &api.WriteOptions{})
 }
 
-func (c *ConsulView) ExpendKey(key string) string {
+func (c *ConsulView) expendKey(key string) string {
 	if c.profile != "" {
 		return fmt.Sprintf("/%s/%s,%s/%s", c.path, c.namespace, c.profile, key)
 	}

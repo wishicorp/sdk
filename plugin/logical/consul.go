@@ -15,6 +15,11 @@ type Consul interface {
 	//获取服务列表
 	GetService(ctx context.Context, id, tag string) (*api.AgentService, error)
 
+	//获取微服务路径
+	GetServiceAddrPort(ctx context.Context, name string, useLan bool, tags string) (host string, port int, err error)
+	//微服务客户端
+	GetMicroHTTPClient(ctx context.Context, id string, useLan bool, tags string, header map[string][]string) (consul.MicroHTTPClient, error)
+
 	//创建一个session,ttl需大于15秒,behavior定义了session到期后的动作
 	//如需深度定制session请获取native客户端创建
 	NewSession(ctx context.Context, name string, ttl time.Duration, behavior consul.SessionBehavior) (string, error)

@@ -2,6 +2,8 @@ package plugin
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/hashicorp/consul/api"
 	"github.com/wishicorp/sdk/library/consul"
 	"github.com/wishicorp/sdk/plugin/logical"
@@ -12,6 +14,7 @@ import (
 )
 
 var _ logical.Consul = (*GRPCConsulClient)(nil)
+var _ proto.ConsulServer = (*GRPCConsulServer)(nil)
 
 func newGRPCConsulClient(conn *grpc.ClientConn) *GRPCConsulClient {
 	return &GRPCConsulClient{
@@ -25,8 +28,40 @@ type GRPCConsulClient struct {
 	client proto.ConsulClient
 }
 
+//此处2个接口grpc server无需实现，可以通过GetService接口完成
+func (s *GRPCConsulClient) GetServiceAddrPort(ctx context.Context, id string, useLan bool, tags string) (host string, port int, err error) {
+	req := proto.GetServiceArgs{
+		Name: id,
+		Tags: tags,
+	}
+	resp, err := s.client.GetService(ctx, &req, largeMsgGRPCCallOpts...)
+	if nil != err {
+		return "", 0, err
+	}
+	var ok bool
+	var addr *proto.ServiceAddress
+	if useLan {
+		addr, ok = resp.TaggedAddresses[consul.LanAddrKey]
+	} else {
+		addr, ok = resp.TaggedAddresses[consul.WanAddrKey]
+	}
+	if ok {
+		return addr.Address, int(addr.Port), nil
+	}
+	return "", 0, errors.New("service not found")
+}
+func (s *GRPCConsulClient) GetMicroHTTPClient(ctx context.Context, id string, useLan bool, tags string, header map[string][]string) (consul.MicroHTTPClient, error) {
+	host, port, err := s.GetServiceAddrPort(ctx, id, useLan, tags)
+	if nil != err {
+		return nil, err
+	}
+
+	url := fmt.Sprintf("http://%s:%d", host, port)
+	return consul.NewMicroClient(url, header), nil
+}
+
 func (s *GRPCConsulClient) KVList(ctx context.Context, prefix string) (api.KVPairs, error) {
-	resp, err := s.client.KVList(ctx, &proto.KVListArgs{Prefix: prefix})
+	resp, err := s.client.KVList(ctx, &proto.KVListArgs{Prefix: prefix}, largeMsgGRPCCallOpts...)
 	if nil != err {
 		return nil, err
 	}
@@ -53,13 +88,13 @@ func (s *GRPCConsulClient) KVCreate(ctx context.Context, p *api.KVPair) error {
 		Value:   p.Value,
 		Session: p.Session,
 	}}
-	_, err := s.client.KVCreate(ctx, &req)
+	_, err := s.client.KVCreate(ctx, &req, largeMsgGRPCCallOpts...)
 	return err
 }
 
 func (s *GRPCConsulClient) GetConfig(ctx context.Context, key, version string, sandbox bool) ([]byte, error) {
 	req := proto.GetConfigArgs{Key: key, Version: version, Sandbox: sandbox}
-	resp, err := s.client.GetConfig(ctx, &req)
+	resp, err := s.client.GetConfig(ctx, &req, largeMsgGRPCCallOpts...)
 	if nil != err {
 		return nil, err
 	}

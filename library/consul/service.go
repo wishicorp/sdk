@@ -9,6 +9,8 @@ import (
 )
 
 const SvcTagSep = "__TAGS__"
+const LanAddrKey = "lan_ipv4"
+const WanAddrKey = "wan_ipv4"
 
 type Service struct {
 	ID             string
@@ -86,15 +88,22 @@ func (c *client) GetService(id, tags string) (*api.AgentService, error) {
 	return ss[rand.Intn(len(ss))&0xffff], nil
 }
 
-func (c *client) GetServiceAddrPort(id string, tags string) (home string, port int, err error) {
+func (c *client) GetServiceAddrPort(id string, useLan bool, tags string) (host string, port int, err error) {
 	s, err := c.GetService(id, tags)
 	if nil != err {
 		return "", 0, err
 	}
-	lan, ok := s.TaggedAddresses["wan_ipv4"]
+	var addr api.ServiceAddress
+	var ok bool
+	if useLan {
+		addr, ok = s.TaggedAddresses[LanAddrKey]
+	} else {
+		addr, ok = s.TaggedAddresses[WanAddrKey]
+	}
+
 	if !ok {
 		return "", 0, errors.New("service not found")
 	}
 
-	return lan.Address, lan.Port, nil
+	return addr.Address, addr.Port, nil
 }

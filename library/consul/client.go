@@ -23,8 +23,9 @@ type Client interface {
 	GetServices(id, tag string) ([]*api.AgentService, error)
 	GetService(id, tag string) (*api.AgentService, error)
 	//获取微服务路径
-	GetServiceAddrPort(name string, tags string) (home string, port int, err error)
-
+	GetServiceAddrPort(name string, useLan bool, tags string) (host string, port int, err error)
+	//微服务客户端
+	GetMicroHTTPClient(id string, useLan bool, tags string, header map[string][]string) (MicroHTTPClient, error)
 	//丛配置中心加载配置文件,out对象必须为对象引用
 	LoadConfig(out interface{}) error
 
@@ -89,6 +90,7 @@ func NewClient(c *Config) (Client, error) {
 		},
 		TLSHandshakeTimeout: 30,
 	}
+
 	cf.Address = c.ZoneAddress
 	cf.Token = c.Token
 	cf.TLSConfig = c.TLSConfig
