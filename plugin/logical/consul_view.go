@@ -20,10 +20,6 @@ type ConsulView struct {
 	profile   string
 }
 
-func (c *ConsulView) Native() *api.Client {
-	return c.consul.Client()
-}
-
 func NewConsulView(namespace, profile string, consul consul.Client) *ConsulView {
 	return &ConsulView{
 		consul:    consul,
@@ -31,6 +27,13 @@ func NewConsulView(namespace, profile string, consul consul.Client) *ConsulView 
 		namespace: namespace,
 		profile:   profile,
 	}
+}
+func (c *ConsulView) Config(ctx context.Context) (*consul.Config, error) {
+	return c.consul.Config(), nil
+}
+
+func (c *ConsulView) Native(ctx context.Context) (*api.Client, error) {
+	return c.consul.Client(), nil
 }
 
 func (c *ConsulView) GetServiceAddrPort(ctx context.Context, name string, useLan bool, tags string) (host string, port int, err error) {

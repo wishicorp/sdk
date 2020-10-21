@@ -136,7 +136,88 @@ message KVListArgs{
 message KVListReply{
   repeated KVPair kvPairs = 1;
 }
+
+
+//type Config struct {
+//	Datacenter  string
+//	ZoneAddress string //consul注册地址 127.0.0.1:8500
+//	Token       string
+//	Application struct {
+//		Name    string //应用名称
+//		Profile string //环境变量 dev test prod ...
+//	}
+//	Config struct {
+//		DataKey string //配置key
+//		Format  string //配置格式
+//	}
+//	TLSConfig api.TLSConfig
+//}
+
+
+//	// Address is the optional address of the Consul server. The port, if any
+//	// will be removed from here and this will be set to the ServerName of the
+//	// resulting config.
+//	Address string
+//
+//	// CAFile is the optional path to the CA certificate used for Consul
+//	// communication, defaults to the system bundle if not specified.
+//	CAFile string
+//
+//	// CAPath is the optional path to a directory of CA certificates to use for
+//	// Consul communication, defaults to the system bundle if not specified.
+//	CAPath string
+//
+//	// CAPem is the optional PEM-encoded CA certificate used for Consul
+//	// communication, defaults to the system bundle if not specified.
+//	CAPem []byte
+//
+//	// CertFile is the optional path to the certificate for Consul
+//	// communication. If this is set then you need to also set KeyFile.
+//	CertFile string
+//
+//	// CertPEM is the optional PEM-encoded certificate for Consul
+//	// communication. If this is set then you need to also set KeyPEM.
+//	CertPEM []byte
+//
+//	// KeyFile is the optional path to the private key for Consul communication.
+//	// If this is set then you need to also set CertFile.
+//	KeyFile string
+//
+//	// KeyPEM is the optional PEM-encoded private key for Consul communication.
+//	// If this is set then you need to also set CertPEM.
+//	KeyPEM []byte
+//
+//	// InsecureSkipVerify if set to true will disable TLS host verification.
+//	InsecureSkipVerify bool
+message ConfigTLSConfig{
+  string  Address = 1;
+  string  CAFile = 2;
+  string  CAPath = 3;
+  bytes CAPem = 4;
+  string  CertFile = 5;
+  bytes CertPEM = 6;
+  string  KeyFile = 7;
+  bytes KeyPEM = 8;
+  bool  InsecureSkipVerify = 9;
+}
+message ConfigApplication{
+  string Name = 1;
+  string Profile = 2;
+}
+message ConfigConfig{
+  string DataKey = 1;
+  string Format = 2;
+}
+message ConfigReply{
+  string Datacenter = 1;
+  string ZoneAddress = 2;
+  string  Token = 3;
+  ConfigApplication Application = 4;
+  ConfigConfig Config = 5;
+  ConfigTLSConfig TLSConfig = 6;
+}
 service Consul {
+  rpc Config(ConsulEmpty)returns(ConfigReply);
   rpc GetConfig(GetConfigArgs)returns(GetConfigReply);
 
   rpc GetService(GetServiceArgs)returns (GetServiceReply);

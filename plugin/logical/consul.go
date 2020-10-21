@@ -8,7 +8,8 @@ import (
 )
 
 type Consul interface {
-	Native()*api.Client
+	Native(ctx context.Context) (*api.Client, error)
+	Config(ctx context.Context) (*consul.Config, error)
 	//sandbox 表示是否在 namespace 下获取配置
 	//配置的路径为 /config/key{.version}
 	GetConfig(ctx context.Context, key, version string, sandbox bool) ([]byte, error)

@@ -28,6 +28,55 @@ type GRPCConsulClient struct {
 	client proto.ConsulClient
 }
 
+func (s *GRPCConsulClient) Native(ctx context.Context) (*api.Client, error) {
+	cfg, err := s.Config(ctx)
+	if nil != err {
+		return nil, err
+	}
+	cli, err := consul.NewClient(cfg)
+	if nil != err {
+		return nil, err
+	}
+	return cli.Client(), nil
+}
+
+func (s *GRPCConsulClient) Config(ctx context.Context) (*consul.Config, error) {
+	cfg, err := s.client.Config(ctx, &proto.ConsulEmpty{}, largeMsgGRPCCallOpts...)
+	if nil != err {
+		return nil, err
+	}
+	return &consul.Config{
+		Datacenter:  cfg.Datacenter,
+		ZoneAddress: cfg.ZoneAddress,
+		Token:       cfg.Token,
+		Application: struct {
+			Name    string
+			Profile string
+		}{
+			Name:    cfg.Application.Name,
+			Profile: cfg.Application.Profile,
+		},
+		Config: struct {
+			DataKey string
+			Format  string
+		}{
+			DataKey: cfg.Config.DataKey,
+			Format:  cfg.GetConfig().GetFormat(),
+		},
+		TLSConfig: api.TLSConfig{
+			Address:            cfg.TLSConfig.Address,
+			CAFile:             cfg.TLSConfig.CAFile,
+			CAPath:             cfg.TLSConfig.CAPath,
+			CAPem:              cfg.TLSConfig.CAPem,
+			CertFile:           cfg.TLSConfig.CertFile,
+			CertPEM:            cfg.TLSConfig.CertPEM,
+			KeyFile:            cfg.TLSConfig.KeyFile,
+			KeyPEM:             cfg.TLSConfig.KeyPEM,
+			InsecureSkipVerify: cfg.TLSConfig.InsecureSkipVerify,
+		},
+	}, nil
+}
+
 //此处2个接口grpc server无需实现，可以通过GetService接口完成
 func (s *GRPCConsulClient) GetServiceAddrPort(ctx context.Context, id string, useLan bool, tags string) (host string, port int, err error) {
 	req := proto.GetServiceArgs{
@@ -248,6 +297,37 @@ func (s *GRPCConsulClient) KVCas(ctx context.Context, p *api.KVPair) (bool, erro
 // ConsulServer is a net/rpc compatible structure for serving
 type GRPCConsulServer struct {
 	impl logical.Consul
+}
+
+func (s *GRPCConsulServer) Config(ctx context.Context, empty *proto.ConsulEmpty) (*proto.ConfigReply, error) {
+	cfg, err := s.impl.Config(ctx)
+	if nil != err {
+		return nil, err
+	}
+	return &proto.ConfigReply{
+		Datacenter:  cfg.Datacenter,
+		ZoneAddress: cfg.ZoneAddress,
+		Token:       cfg.Token,
+		Application: &proto.ConfigApplication{
+			Name:    cfg.Application.Name,
+			Profile: cfg.Application.Profile,
+		},
+		Config: &proto.ConfigConfig{
+			DataKey: cfg.Config.DataKey,
+			Format:  cfg.Config.Format,
+		},
+		TLSConfig: &proto.ConfigTLSConfig{
+			Address:            cfg.TLSConfig.Address,
+			CAFile:             cfg.TLSConfig.CAFile,
+			CAPath:             cfg.TLSConfig.CAPath,
+			CAPem:              cfg.TLSConfig.CAPem,
+			CertFile:           cfg.TLSConfig.CertFile,
+			CertPEM:            cfg.TLSConfig.CertPEM,
+			KeyFile:            cfg.TLSConfig.KeyFile,
+			KeyPEM:             cfg.TLSConfig.KeyPEM,
+			InsecureSkipVerify: cfg.TLSConfig.InsecureSkipVerify,
+		},
+	}, nil
 }
 
 func (s *GRPCConsulServer) KVCreate(ctx context.Context, args *proto.KVCasArgs) (*proto.ConsulEmpty, error) {
