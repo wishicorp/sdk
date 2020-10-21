@@ -20,6 +20,10 @@ type ConsulView struct {
 	profile   string
 }
 
+func (c *ConsulView) Native() *api.Client {
+	return c.consul.Client()
+}
+
 func NewConsulView(namespace, profile string, consul consul.Client) *ConsulView {
 	return &ConsulView{
 		consul:    consul,
