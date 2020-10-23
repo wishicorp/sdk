@@ -5,10 +5,12 @@ import (
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
 	"fmt"
+	"github.com/wishicorp/sdk/helper/jsonutil"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -141,11 +143,21 @@ func (c *client) Delete(reqUrl string, header http.Header, data interface{}) (re
 }
 
 func (c *client) write(reqUrl string, method RequestMethod, header http.Header, data interface{}) (ret []byte, err error) {
-	bs, err := json.Marshal(data)
-	if nil != err {
-		return nil, err
+	var reader io.Reader
+	switch data.(type) {
+	case string:
+		reader = strings.NewReader(data.(string))
+	case *string:
+		reader = strings.NewReader(*data.(*string))
+	case []byte:
+		reader = bytes.NewReader(data.([]byte))
+	case *[]byte:
+		reader = bytes.NewReader(*data.(*[]byte))
+	default:
+		bs, _ := jsonutil.EncodeJSON(data)
+		reader = bytes.NewReader(bs)
 	}
-	request, err := http.NewRequest(string(method), reqUrl, bytes.NewReader(bs))
+	request, err := http.NewRequest(string(method), reqUrl, reader)
 	if err != nil {
 		return nil, err
 	}
