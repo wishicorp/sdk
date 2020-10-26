@@ -67,7 +67,21 @@ func KVSign(signType SignType, key string, in interface{}) (string, error) {
 	return Sign(signType, key, data, true), nil
 }
 
+// @signType 签名类型 目前支持MD5
+// @key md5 key
+// @params 签名数据 map[string]string
+// @withKey 签名数据是否包含key
 func Sign(signType SignType, key string, params Params, withKey bool) string {
+	buf := SortRaw(key, params, withKey)
+	fmt.Println(buf.String())
+	return sign(signType, key, buf)
+}
+
+func SignBuf(signType SignType, key string, buf bytes.Buffer) string {
+	return sign(signType, key, buf)
+}
+
+func SortRaw(key string, params Params, withKey bool) bytes.Buffer {
 	// 创建切片
 	var keys = make([]string, 0, len(params))
 	// 遍历签名参数
@@ -97,9 +111,7 @@ func Sign(signType SignType, key string, params Params, withKey bool) string {
 		buf.WriteString(`key=`)
 	}
 	buf.WriteString(key)
-	fmt.Println(buf.String())
-	return sign(signType, key, buf)
-
+	return buf
 }
 
 func sign(signType SignType, key string, buf bytes.Buffer) string {
