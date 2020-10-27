@@ -28,5 +28,5 @@ type Gateway interface {
 	Shutdown()
 	Running() <-chan bool
 	Listen(addr string, port uint) error
-	Serve() error
+	Serve(basePath string) error
 }
