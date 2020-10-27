@@ -102,7 +102,7 @@ func (m *GRPCGateway) Listen(addr string, port uint) error {
 	return nil
 }
 
-func (m *GRPCGateway) Serve() (err error) {
+func (m *GRPCGateway) Serve(basePath string) (err error) {
 	go func() {
 		err = m.grpcServer.Serve(m.tcpListen)
 	}()
