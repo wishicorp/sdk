@@ -115,10 +115,11 @@ func (m *HttpGateway) Listen(addr string, port uint) error {
 	}
 	return nil
 }
-func (m *HttpGateway) Serve() error {
+
+func (m *HttpGateway) Serve(basePath string) error {
 	m.startWorkerPool(m.workerSize)
-	m.api()
-	m.open()
+	m.api(basePath)
+	m.open(basePath)
 	//m.schemas()
 	return m.ginServer.Serve()
 }

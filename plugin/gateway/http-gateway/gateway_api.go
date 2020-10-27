@@ -12,8 +12,8 @@ import (
 	"strings"
 )
 
-func (m *HttpGateway) open() {
-	m.ginServer.Router.POST("/open", func(c *gin.Context) {
+func (m *HttpGateway) open(basePath string) {
+	m.ginServer.Router.POST(basePath+"/open", func(c *gin.Context) {
 		request := new(gateway.RequestArgs)
 		if err := c.ShouldBindJSON(request); err != nil {
 			c.SecureJSON(200, gateway.Error(consts.ReplyCodeFailure, err.Error()))
@@ -57,8 +57,8 @@ func (m *HttpGateway) open() {
 		m.invokeRequest(c, method, string(bs))
 	})
 }
-func (m *HttpGateway) api() {
-	m.ginServer.Router.POST("/api", func(c *gin.Context) {
+func (m *HttpGateway) api(basePath string) {
+	m.ginServer.Router.POST(basePath+"/api", func(c *gin.Context) {
 		request := new(gateway.RequestArgs)
 		if err := c.ShouldBindJSON(request); err != nil {
 			c.SecureJSON(200, gateway.Error(consts.ReplyCodeFailure, err.Error()))
