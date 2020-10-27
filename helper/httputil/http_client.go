@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -143,6 +144,10 @@ func (c *client) Delete(reqUrl string, header http.Header, data interface{}) (re
 }
 
 func (c *client) write(reqUrl string, method RequestMethod, header http.Header, data interface{}) (ret []byte, err error) {
+	if header.Get("Content-Type") == string(FORM) {
+		return c.formWrite(reqUrl, method, header, data)
+	}
+
 	var reader io.Reader
 	switch data.(type) {
 	case string:
@@ -161,10 +166,28 @@ func (c *client) write(reqUrl string, method RequestMethod, header http.Header, 
 	if err != nil {
 		return nil, err
 	}
-
-	request.Header = c.mergeHeader(header)
-
+	c.mergeHeader(header)
 	return doRequest(c, request)
+}
+
+func (c *client) formWrite(reqUrl string, method RequestMethod, header http.Header, data interface{}) (ret []byte, err error) {
+	var form map[string]string
+	if err := jsonutil.Swap(data, &form); err != nil {
+		return nil, err
+	}
+	body := url.Values{}
+	for key, val := range form {
+		body.Set(key, val)
+	}
+	cli := http.DefaultClient
+	resp, err := cli.Post(reqUrl, "application/x-www-form-urlencoded",
+		strings.NewReader(body.Encode()))
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	return ioutil.ReadAll(resp.Body)
 }
 
 func doRequest(c *client, request *http.Request) (ret []byte, err error) {
