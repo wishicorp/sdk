@@ -1,6 +1,7 @@
 package logical
 
 import (
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"github.com/go-playground/validator/v10"
@@ -45,6 +46,20 @@ func (r *Request) Decode(out interface{}) error {
 	return r.Validate(out)
 }
 
+func (r *Request) XMLDecode(out interface{}) error {
+	if r.Data == nil {
+		return ErrInvalidData
+	}
+	input, ok := r.Data["data"]
+	if !ok {
+		return ErrInvalidData
+	}
+	err := xml.Unmarshal(input, out)
+	if err != nil {
+		return err
+	}
+	return r.Validate(out)
+}
 func (r *Request) Validate(in interface{}) error {
 	err := validator.New().Struct(in)
 	if err != nil {
