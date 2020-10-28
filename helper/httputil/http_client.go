@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/xml"
 	"fmt"
 	"github.com/wishicorp/sdk/helper/jsonutil"
 	"io"
@@ -159,10 +160,16 @@ func (c *client) write(reqUrl string, method RequestMethod, header http.Header, 
 	case *[]byte:
 		reader = bytes.NewReader(*data.(*[]byte))
 	default:
-		bs, _ := jsonutil.EncodeJSON(data)
-		reader = bytes.NewReader(bs)
+		if header.Get("Content-Type") == string(XML) {
+			bs, _ := xml.Marshal(data)
+			reader = bytes.NewReader(bs)
+		} else {
+			bs, _ := jsonutil.EncodeJSON(data)
+			reader = bytes.NewReader(bs)
+		}
 	}
-	request, err := http.NewRequest(string(method), reqUrl, reader)
+	var request *http.Request
+	request, err = http.NewRequest(string(method), reqUrl, reader)
 	if err != nil {
 		return nil, err
 	}
