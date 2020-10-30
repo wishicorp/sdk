@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/copystructure"
 	"github.com/wishicorp/sdk/helper/jsonutil"
+	"reflect"
 	"strings"
 )
 
@@ -43,6 +44,9 @@ func (r *Request) Decode(out interface{}) error {
 	if err != nil {
 		return err
 	}
+	if reflect.TypeOf(out).Elem().Kind() == reflect.Slice{
+		return nil
+	}
 	return r.Validate(out)
 }
 
@@ -58,15 +62,23 @@ func (r *Request) XMLDecode(out interface{}) error {
 	if err != nil {
 		return err
 	}
+
+	if reflect.TypeOf(out).Elem().Kind() == reflect.Slice{
+		return nil
+	}
 	return r.Validate(out)
 }
 func (r *Request) Validate(in interface{}) error {
 	err := validator.New().Struct(in)
+	var fs []string
 	if err != nil {
-		ferr := err.(validator.ValidationErrors)
-		var fs []string
-		for _, fieldError := range ferr {
-			fs = append(fs, fieldError.Field())
+		switch ferr := err.(type) {
+		case validator.ValidationErrors:
+			for _, fieldError := range ferr {
+				fs = append(fs, fieldError.Field())
+			}
+		default:
+			fs = append(fs, err.Error())
 		}
 		return fmt.Errorf("缺少参数: %s", strings.Join(fs, ", "))
 	}

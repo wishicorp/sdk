@@ -61,8 +61,7 @@ func (b *Backend) Initialize(ctx context.Context, req *logical.InitializationReq
 func (b *Backend) HandleRequest(ctx context.Context, req *logical.Request) (resp *logical.Response, err error) {
 	defer func() {
 		if err2 := recover(); nil != err2 {
-			err = err2.(error)
-			b.logger.Error("recover", "request", jsonutil.EncodeToString(req), "err", err)
+			b.logger.Error("recover", "request", jsonutil.EncodeToString(req), "err", err2)
 			if b.logger.IsTrace() {
 				debug.PrintStack()
 			}
