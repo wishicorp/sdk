@@ -87,7 +87,7 @@ func (c *ConsulView) KVRelease(ctx context.Context, key string) error {
 }
 
 func (c *ConsulView) KVInfo(ctx context.Context, key string) (*api.KVPair, error) {
-	return c.consul.KVInfo(c.ExpendSessionKey(key), &api.QueryOptions{})
+	return c.consul.KVInfo(key, &api.QueryOptions{})
 }
 
 func (c *ConsulView) KVCas(ctx context.Context, p *api.KVPair) (bool, error) {

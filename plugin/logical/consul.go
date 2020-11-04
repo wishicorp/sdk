@@ -30,8 +30,7 @@ type Consul interface {
 	DestroySession(ctx context.Context, id string) error
 
 	//对一个kv进行加锁
-	//another标志key是否被其它session锁定
-	//err==nil && false == another 加锁成功
+	//err==nil && success 加锁成功
 	KVAcquire(ctx context.Context, key, session string) (success bool, err error)
 	//释放一个session的锁
 	KVRelease(ctx context.Context, key string) error

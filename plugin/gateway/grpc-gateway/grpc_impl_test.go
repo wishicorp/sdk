@@ -19,12 +19,13 @@ func TestNewGateway(t *testing.T) {
 		Backend:   "admin",
 		Namespace: "order",
 		Operation: "list",
-		Token:     "94e855c5-35af-43d7-9f6c-1ab4a2a6af28",
+		Token:     "d6cafbff-e1fa-4669-91ac-d32e3ee18985",
+		Data: []byte(`{"size":1,"page":1}`),
 	}
 	time.Sleep(time.Second)
 	reply, err := cli.ExecRequest(context.Background(), &args)
 	if nil != err {
 		t.Fatal(err)
 	}
-	t.Log(reply, string(reply.Result.Data))
+	t.Log(reply)
 }

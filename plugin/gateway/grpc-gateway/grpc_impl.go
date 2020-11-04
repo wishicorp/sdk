@@ -2,6 +2,7 @@ package grpc_gateway
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/hashicorp/go-hclog"
 	"github.com/wishicorp/sdk/helper/jsonutil"
@@ -64,7 +65,23 @@ func (m *GRPCGatewayImpl) Schemas(ctx context.Context, args *gwproto.SchemasArgs
 }
 
 //TODO 未完成实现，后期和httpGateway 合并实现
-func (m *GRPCGatewayImpl) ExecRequest(ctx context.Context, args *gwproto.RequestArgs) (*gwproto.RequestReply, error) {
+func (m *GRPCGatewayImpl) ExecRequest(ctx context.Context, args *gwproto.RequestArgs) (gwReply *gwproto.RequestReply, err error) {
+	defer func() {
+		if nil != err{
+			m.logger.Error("exec request",
+				"args", jsonutil.EncodeToString(args),
+				"err", err)
+		}else {
+			if m.logger.IsTrace(){
+				m.logger.Trace("exec request",
+					"args", jsonutil.EncodeToString(args),
+					"reply", jsonutil.EncodeToString(gwReply))
+			}
+		}
+	}()
+	if args.Data == nil{
+		return nil, errors.New("args[data] is null")
+	}
 	backend, has := m.pm.GetBackend(args.Backend)
 	if !has {
 		return nil, pluginregister.PluginNotExists
@@ -75,18 +92,12 @@ func (m *GRPCGatewayImpl) ExecRequest(ctx context.Context, args *gwproto.Request
 		Operation: logical.Operation(args.Operation),
 		Namespace: args.Namespace,
 		Token:     args.Token,
-	}
-	if err := jsonutil.DecodeJSON(args.Authorized, &req.Authorized); err != nil {
-		return nil, err
+		Data: map[string][]byte{"data": args.Data},
 	}
 
-	if args.Data != nil {
-		req.Data = map[string][]byte{"data": args.Data}
-	} else {
-		req.Data = map[string][]byte{"data": []byte("{}")}
-	}
 	if m.authEnabled && m.authMethod != nil {
-		authReply, err := m.authorization(backend, req)
+		var authReply *logical.Response
+		authReply, err = m.authorization(backend, req)
 		if err != nil {
 			return nil, fmt.Errorf("auth: %s", err.Error())
 		}
@@ -98,24 +109,25 @@ func (m *GRPCGatewayImpl) ExecRequest(ctx context.Context, args *gwproto.Request
 				},
 			}, nil
 		}
-		if err := jsonutil.Swap(authReply.Content.Data, &req.Authorized); err != nil {
+		if err = jsonutil.Swap(authReply.Content.Data, &req.Authorized); err != nil {
 			return nil, err
 		}
 	}
-
-	reply, err := backend.HandleRequest(ctx, req)
+	var reply *logical.Response
+	reply, err = backend.HandleRequest(ctx, req)
 	if nil != err {
 		return nil, err
 	}
-
-	data, err := jsonutil.EncodeJSON(reply.Content)
-	return &gwproto.RequestReply{
+	var data []byte
+	data, err = jsonutil.EncodeJSON(reply.Content)
+	gwReply = &gwproto.RequestReply{
 		Result: &gwproto.Result{
 			ResultCode: int32(reply.ResultCode),
 			ResultMsg:  reply.ResultMsg,
 			Data:       data,
 		},
-	}, nil
+	}
+	return gwReply, err
 }
 
 func (m *GRPCGatewayImpl) toProtoNamespaceSchemas(nss logical.NamespaceSchemas) *gwproto.Schemas {
