@@ -7,10 +7,6 @@ import (
 )
 
 var (
-	// PluginMlockEnabled is the ENV name used to pass the configuration for
-	// enabling mlock
-	PluginMlockEnabled = "PLUGIN_MLOCK_ENABLED"
-
 	// PluginVersionEnv is the ENV name used to pass the version of the
 	// PLUGIN server to the plugins
 	PluginVersionEnv = "PLUGIN_VERSION"

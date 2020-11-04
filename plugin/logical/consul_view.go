@@ -17,15 +17,13 @@ type ConsulView struct {
 	consul    consul.Client
 	path      string
 	namespace string
-	profile   string
 }
 
-func NewConsulView(namespace, profile string, consul consul.Client) *ConsulView {
+func NewConsulView(namespace string, consul consul.Client) *ConsulView {
 	return &ConsulView{
 		consul:    consul,
 		path:      ConfigPath,
 		namespace: namespace,
-		profile:   profile,
 	}
 }
 func (c *ConsulView) Config(ctx context.Context) (*consul.Config, error) {
@@ -95,9 +93,6 @@ func (c *ConsulView) KVCas(ctx context.Context, p *api.KVPair) (bool, error) {
 }
 
 func (c *ConsulView) expendKey(key string) string {
-	if c.profile != "" {
-		return fmt.Sprintf("/%s/%s,%s/%s", c.path, c.namespace, c.profile, key)
-	}
 	return fmt.Sprintf("/%s/%s/%s", c.path, c.namespace, key)
 }
 
@@ -112,8 +107,5 @@ func (c *ConsulView) KVCreate(ctx context.Context, p *api.KVPair) error {
 }
 
 func (c *ConsulView) ExpendSessionKey(key string) string {
-	if c.profile != "" {
-		return fmt.Sprintf("/%s/%s,%s/%s", SessionPath, c.namespace, c.profile, key)
-	}
 	return fmt.Sprintf("/%s/%s/%s", SessionPath, c.namespace, key)
 }

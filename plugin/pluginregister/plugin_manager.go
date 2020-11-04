@@ -147,7 +147,7 @@ func (p *PluginManager) start(pluginEntry PluginEntry) error {
 		Logger:        logger,
 		BackendUUID:   uuid.NewV1().String(),
 		Config:        map[string]string{"plugin_name": pluginEntry.GetName()},
-		ConsulView:    logical.NewConsulView(name, "", p.consul),
+		ConsulView:    logical.NewConsulView(name,  p.consul),
 		ComponentView: p.component,
 	}
 

@@ -13,7 +13,6 @@ func (c *client) Register(s *Service) error {
 	check := &api.AgentServiceCheck{
 		CheckID:                        s.ID,
 		HTTP:                           url,
-		TTL:                            "15s",
 		Interval:                       s.CheckInterval,
 		Body:                           s.MatchBody,
 		TLSSkipVerify:                  true,
