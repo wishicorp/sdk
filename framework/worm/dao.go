@@ -57,8 +57,9 @@ func (m *OrmBaseDao) Session() *xorm.Session {
 
 //创建一个session
 func (m *OrmBaseDao) NewSession() SessionDao {
-	m.session = m.conn.NewSession()
-	return m
+	sm := &OrmBaseDao{conn: m.conn}
+	sm.session = m.conn.NewSession()
+	return sm
 }
 
 //开启事务
