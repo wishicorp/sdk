@@ -15,7 +15,6 @@ import (
 	"github.com/nsqio/go-nsq"
 	"github.com/wishicorp/sdk/helper/threadutil"
 	"math/rand"
-	"strings"
 	"sync"
 	"time"
 )
@@ -24,7 +23,7 @@ import (
 type NSQClient interface {
 	NodeAddress() []string
 	Lookup() error
-	CreateProducers() error
+	CreatePublishers() error
 	StartProducers(useAsync bool, batchSize int) error
 	Send([]byte)
 	Shutdown()
@@ -42,7 +41,7 @@ type nsqClient struct {
 	sync.Mutex
 	logger           hclog.Logger
 	nodeAddress      []string
-	publishers       []*publisher
+	publishers       map[string]*publisher
 	mainChan         chan []byte
 	topic            string
 	cfg              *nsq.Config
@@ -63,7 +62,7 @@ func NewNsqClient(cfg *Config, topic string, logger hclog.Logger) (NSQClient, er
 		return nil, errors.New(threadutil.GetCaller(3) + " topic required")
 	}
 	if len(cfg.LookupdHTTPAddrs) == 0 {
-		return nil, errors.New(threadutil.GetCaller(3) + " lookupdHTTPAddrs required")
+		return nil, errors.New(threadutil.GetCaller(3) + " lookupd http address required")
 	}
 	nsqConfig := nsq.NewConfig()
 	nsqConfig.TlsConfig = cfg.TlsConfig
@@ -78,6 +77,7 @@ func NewNsqClient(cfg *Config, topic string, logger hclog.Logger) (NSQClient, er
 		mainChan:         make(chan []byte, 819200),
 		topic:            topic,
 		logger:           logger,
+		publishers:  make(map[string]*publisher, 0),
 	}, nil
 }
 
@@ -93,8 +93,8 @@ func (nc *nsqClient) Lookup() error {
 	return nil
 }
 
-// 创建producer
-func (nc *nsqClient) CreateProducers() error {
+// 创建Publishers
+func (nc *nsqClient) CreatePublishers() error {
 	nc.Lock()
 	defer nc.Unlock()
 
@@ -105,24 +105,19 @@ func (nc *nsqClient) CreateProducers() error {
 	if err := nc.Lookup(); err != nil {
 		return err
 	}
-
-	nc.publishers = make([]*publisher, 0)
-
 	for _, addr := range nc.nodeAddress {
+		//可能是重连，跳过存在的
+		_, ok := nc.publishers[addr]
+		if  ok {
+			continue
+		}
 		producer, err := nsq.NewProducer(addr, nc.cfg)
 		if err != nil {
 			nc.logger.Error("lookup", "addr", addr, "err", err.Error())
 		}
 		pub := NewPublisher(nc.topic, &Producer{producer}, nc.logger.Named("publisher"))
-		nc.publishers = append(nc.publishers, pub)
+		nc.publishers[addr] = pub
 
-	}
-	if len(nc.publishers) == 0 {
-		err := fmt.Errorf("connect to nsqd failure: %s",
-			strings.Join(nc.nodeAddress, ","))
-		nc.logger.Error("lookup",
-			"err", err.Error())
-		return err
 	}
 
 	if err := nc.startPublisher(); err != nil {
@@ -135,7 +130,8 @@ func (nc *nsqClient) CreateProducers() error {
 func (nc *nsqClient) Send(data []byte) {
 	select {
 	case nc.mainChan <- data:
-	case <-time.After(time.Millisecond * 100):
+	default:
+		time.Sleep(time.Millisecond * 30)
 	}
 }
 
@@ -151,7 +147,8 @@ func (nc *nsqClient) StartProducers(useAsync bool, batchSize int) error {
 		for {
 			select {
 			case data := <-nc.mainChan:
-				pub := nc.publishers[rand.Int31n(int32(len(nc.publishers)))]
+				addr := nc.nodeAddress[rand.Int31n(int32(len(nc.publishers)))]
+				pub := nc.publishers[addr]
 				pub.Publish(data)
 			default:
 				time.Sleep(time.Millisecond * 30)
@@ -159,16 +156,7 @@ func (nc *nsqClient) StartProducers(useAsync bool, batchSize int) error {
 		}
 	}()
 
-	//定时重连
-	go func() {
-		ticker := time.NewTicker(time.Minute)
-		for true {
-			select {
-			case <-ticker.C:
-				nc.autoDiscovery()
-			}
-		}
-	}()
+	nc.autoReconnect(time.Minute)
 
 	return nil
 }
@@ -178,28 +166,35 @@ func (nc *nsqClient) Shutdown() {
 }
 
 func (nc *nsqClient) startPublisher() error {
-	for _, pub := range nc.publishers {
+	for addr, pub := range nc.publishers {
 		ctx, err := pub.StarPublisher(nc.useAsync, nc.batchSize, nc.mainCtx)
 		if nil != err {
 			nc.logger.Error("start publisher", "err", err.Error())
 			return err
 		}
-		go func() {
-			for {
-				select {
-				case <-ctx.Done():
-					nc.CreateProducers()
-				}
+		go func(addr string) {
+			select {
+			case <-ctx.Done():
+				nc.Lock()
+				delete(nc.publishers, addr)
+				nc.Unlock()
 			}
-		}()
+		}(addr)
 	}
 	return nil
 }
 
-//自动发现nsqd和建立连接
-func (nc *nsqClient) autoDiscovery() {
-	nc.Lock()
-	defer nc.Unlock()
-
-	nc.CreateProducers()
+func (nc *nsqClient)autoReconnect(duration time.Duration)  {
+	//定时重连
+	go func() {
+		ticker := time.NewTicker(duration)
+		for true {
+			select {
+			case <-ticker.C:
+				if err := nc.CreatePublishers(); err != nil {
+					nc.logger.Error("auto discovery nsqd", "err", err.Error())
+				}
+			}
+		}
+	}()
 }

@@ -29,7 +29,6 @@ func (r *lookup) LookupNsqdAddress() []string {
 
 retry:
 	endpoint := r.nextLookup()
-
 	var data lookupResp
 	err := apiRequestNegotiateV1("GET", endpoint, nil, &data)
 	if err != nil {
@@ -64,7 +63,7 @@ func (r *lookup) nextLookup() string {
 
 	urlString := addr
 	if !strings.Contains(urlString, "://") {
-		urlString = "httputil://" + addr
+		urlString = "http://" + addr
 	}
 
 	u, err := url.Parse(urlString)

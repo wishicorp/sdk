@@ -74,18 +74,5 @@ func apiRequestNegotiateV1(method string, endpoint string, body io.Reader, ret i
 		respBody = []byte("{}")
 	}
 
-	if resp.Header.Get("X-NSQ-Content-Kind") == "nsq; version=1.0" {
-		return json.Unmarshal(respBody, ret)
-	}
-
-	wResp := &wrappedResp{
-		Data: ret,
-	}
-
-	if err = json.Unmarshal(respBody, wResp); err != nil {
-		return err
-	}
-
-	// wResp.StatusCode here is equal to resp.StatusCode, so ignore it
-	return nil
+	return json.Unmarshal(respBody, ret)
 }

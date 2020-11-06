@@ -5,7 +5,6 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/wishicorp/sdk/helper/jsonutil"
 	"github.com/wishicorp/sdk/library/nsq-client"
-	"log"
 	"time"
 )
 
@@ -26,19 +25,21 @@ func NewNsqWriter(
 	topic, indexName string) (*nsqWriter, error) {
 	config := nsq_client.Config{
 		LookupdHTTPAddrs: lookupdHTTPAddrs,
+		ReadTimeout: time.Second * 30,
+		WriteTimeout: time.Second * 30,
+		LookupdPollInterval: time.Second * 5,
 	}
 	logger := hclog.NewInterceptLogger(&hclog.LoggerOptions{
 		Name:       "nsq-logging",
 		Level:      hclog.Info,
-		JSONFormat: false,
+		JSONFormat: true,
 		TimeFormat: time.RFC3339,
 	})
 	client, err := nsq_client.NewNsqClient(&config, topic, logger)
 	if nil != err {
 		return nil, err
 	}
-	log.SetFlags(log.Lshortfile | log.LstdFlags)
-	if err := client.CreateProducers(); err != nil {
+	if err := client.CreatePublishers(); err != nil {
 		return nil, err
 	}
 	if err := client.StartProducers(true, 1); err != nil {

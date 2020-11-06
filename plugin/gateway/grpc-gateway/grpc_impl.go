@@ -86,6 +86,7 @@ func (m *GRPCGatewayImpl) ExecRequest(ctx context.Context, args *gwproto.Request
 	if !has {
 		return nil, pluginregister.PluginNotExists
 	}
+
 	backend.Incr()
 	defer backend.DeIncr()
 	req := &logical.Request{

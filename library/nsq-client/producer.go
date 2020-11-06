@@ -8,7 +8,7 @@ import (
 type Producer struct {
 	*nsq.Producer
 }
-
+// stopCh 停止变量出管道
 func (producer *Producer) PingWithStopCh(stopCh chan<- bool, duration time.Duration) {
 	ticker := time.NewTicker(duration)
 	go func() {

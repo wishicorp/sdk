@@ -237,7 +237,6 @@ func worker(ctx context.Context, topic string, channel string, config *nsq.Confi
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("stopping...")
 			publisher.Shutdown(false)
 			consumer.Stop()
 			return

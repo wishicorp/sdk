@@ -32,11 +32,6 @@ func (m *HttpGateway) open(basePath string) {
 		}
 
 		if m.security != nil {
-			if !m.security.SignVerify(request) {
-				c.SecureJSON(200,
-					gateway.Error(consts.ReplyCodeSignInvalid, "invalid sign"))
-				return
-			}
 			client := &gateway.Client{
 				RemoteAddr: GetRemoteAddr(c),
 				Referer:    c.Request.Referer(),
@@ -115,8 +110,8 @@ func (m *HttpGateway) schemas() {
 			backends = m.pm.List()
 		}
 
-		for _, b := range backends {
-			backend, has := m.pm.GetBackend(b["name"])
+		for _, bMap := range backends {
+			backend, has := m.pm.GetBackend(bMap["name"])
 			if !has {
 				continue
 			}
@@ -133,7 +128,7 @@ func (m *HttpGateway) schemas() {
 				}
 				break
 			} else {
-				schemas[b["name"]] = resp.NamespaceSchemas
+				schemas[bMap["name"]] = resp.NamespaceSchemas
 			}
 		}
 
