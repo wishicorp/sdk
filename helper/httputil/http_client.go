@@ -148,7 +148,6 @@ func (c *client) write(reqUrl string, method RequestMethod, header http.Header, 
 	if header.Get("Content-Type") == string(FORM) {
 		return c.formWrite(reqUrl, method, header, data)
 	}
-
 	var reader io.Reader
 	switch data.(type) {
 	case string:

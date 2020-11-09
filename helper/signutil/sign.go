@@ -73,7 +73,6 @@ func KVSign(signType SignType, key string, in interface{}) (string, error) {
 // @withKey 签名数据是否包含key
 func Sign(signType SignType, key string, params Params, withKey bool) string {
 	buf := SortRaw(key, params, withKey)
-	fmt.Println(buf.String())
 	return sign(signType, key, buf)
 }
 
