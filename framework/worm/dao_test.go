@@ -24,17 +24,16 @@ func TestEntity_Create(t *testing.T) {
 	dao := NewBaseDao(conn)
 	session := dao.NewSession()
 	defer session.Close()
-	session.Begin()
+
 
 	t1 := TestTrans{Id: 1}
 	t2 := TestTrans{Id: 2}
 	t3 := TestTrans{Id: 3}
 	dao.InsertOne(&t1)
-
+	session.Begin()
 	session.InsertOne(&t2)
 	if _, err := dao.InsertOne(&t3); err != nil {
 		t.Fatal(err)
 		return
 	}
-	session.Commit()
 }

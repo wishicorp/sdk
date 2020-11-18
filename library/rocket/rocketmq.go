@@ -2,11 +2,11 @@
 package rocket
 
 type RktMQConfig struct {
-	Broker    string `yaml:"broker"`
-	AccessKey string `yaml:"access_key"`
-	SecretKey string `yaml:"secret_key"`
-	NameSpace string `yaml:"name_space"`
-	Instance  string `yaml:"instance"`
+	Broker    string `yaml:"broker" hcl:"broker" json:"broker"`
+	AccessKey string `yaml:"access_key" hcl:"access_key" json:"access_key"`
+	SecretKey string `yaml:"secret_key" hcl:"secret_key" json:"secret_key"`
+	NameSpace string `yaml:"name_space" hcl:"name_space" json:"name_space"`
+	Instance  string `yaml:"instance" hcl:"instance" json:"instance"`
 }
 type RocketMQ interface {
 	NewProducer() (Producer, error)
