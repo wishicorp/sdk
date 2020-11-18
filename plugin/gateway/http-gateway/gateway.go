@@ -120,6 +120,6 @@ func (m *HttpGateway) Serve(basePath string) error {
 	m.startWorkerPool(m.workerSize)
 	m.api(basePath)
 	m.open(basePath)
-	//m.schemas()
+	m.schemas(basePath)
 	return m.ginServer.Serve()
 }

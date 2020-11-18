@@ -98,8 +98,8 @@ func (m *HttpGateway) api(basePath string) {
 
 }
 
-func (m *HttpGateway) schemas() {
-	m.ginServer.Router.GET("/schemas", func(c *gin.Context) {
+func (m *HttpGateway) schemas(basePath string) {
+	m.ginServer.Router.GET(basePath+"/schemas", func(c *gin.Context) {
 		backends := make([]map[string]string, 0)
 		backendName := c.Query("backend")
 		namespace := c.Query("namespace")
