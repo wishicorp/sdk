@@ -49,7 +49,13 @@ func TestNewCommonProducer(t *testing.T) {
 	}
 	t.Log(err)
 	p.Start()
-	msg := "{\"orderId\": \"020259e2-7f1d-11ea-8bcd-80e65008316e\", \"ElectricAmount\": 3.4, \"ChargingPower\": 4.5, \"chargerId\": 16357, \"ChargeTime\": 1587432168}"
+	msg := "{" +
+		"\"orderId\": \"020259e2-7f1d-11ea-8bcd-80e65008316e\", " +
+		"\"ElectricAmount\": 3.4," +
+		" \"ChargingPower\": 4.5," +
+		" \"chargerId\": 16357," +
+		" \"ChargeTime\": 1587432168" +
+		"}"
 
 	result, err := p.SendSync(context.Background(), primitive.NewMessage("iot_notice_charge_report", []byte(msg)))
 	t.Log(result, err)
