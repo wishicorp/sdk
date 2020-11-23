@@ -43,7 +43,15 @@ type backendGRPCPluginClient struct {
 	doneCtx    context.Context
 }
 
-func (b *backendGRPCPluginClient) SchemaRequest(ctx context.Context) (*logical.SchemaResponse, error) {
+func (b *backendGRPCPluginClient) Name() string {
+	reply, err := b.client.Name(context.Background(), &proto.Empty{})
+	if err != nil {
+		return ""
+	}
+	return reply.GetName()
+}
+
+func (b *backendGRPCPluginClient) SchemaRequest(ctx context.Context) (*logical.SchemaReply, error) {
 	if b.metadataMode {
 		return nil, ErrClientInMetadataMode
 	}

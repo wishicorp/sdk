@@ -263,7 +263,7 @@ func protoFieldToLogicalField(fields []*Field) []*logical.Field {
 	}
 	return outFields
 }
-func ProtoNamespaceSchemasToLigicalNamespaceSchemas(ns *SchemaRequestReply) *logical.SchemaResponse {
+func ProtoNamespaceSchemasToLigicalNamespaceSchemas(ns *SchemaRequestReply) *logical.SchemaReply {
 	var schemas logical.NamespaceSchemas
 	for _, schema := range ns.NamespaceSchemas {
 		operations := map[logical.Operation]*logical.Schema{}
@@ -285,8 +285,8 @@ func ProtoNamespaceSchemasToLigicalNamespaceSchemas(ns *SchemaRequestReply) *log
 		}
 		schemas = append(schemas, &sc)
 	}
-	response := &logical.SchemaResponse{
-		NamespaceSchemas: schemas,
+	response := &logical.SchemaReply{
+		Namespaces: schemas,
 	}
 	return response
 }
@@ -314,9 +314,9 @@ func logicalFieldToProtoField(fields []*logical.Field) []*Field {
 	return outFields
 }
 
-func LogicalNamespaceSchemasToProtoNamespaceSchemas(ns *logical.SchemaResponse) *SchemaRequestReply {
+func LogicalNamespaceSchemasToProtoNamespaceSchemas(ns *logical.SchemaReply) *SchemaRequestReply {
 	var schemas []*NamespaceSchema
-	for _, schema := range ns.NamespaceSchemas {
+	for _, schema := range ns.Namespaces {
 		operations := map[string]*Schema{}
 		for key, opt := range schema.Operations {
 			operations[string(key)] = &Schema{

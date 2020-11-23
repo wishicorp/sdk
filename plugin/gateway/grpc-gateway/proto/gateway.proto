@@ -6,7 +6,6 @@ package gwproto;
 
 message SchemasArgs{
   string backend = 1;
-  string namespace = 2;
 }
 message Field {
   string field = 1;
@@ -25,16 +24,21 @@ message Operation {
   map<int32, string>  errors = 6;
 }
 
-message Schema{
+message Namespace{
   string namespace = 1;
   string description = 2;
   map<string, Operation>  Operations = 3;
 }
-message Schemas{
-  repeated Schema schemas = 1;
+
+//schema结构体
+message SchemaEntity{
+  string name = 1;
+  string backend = 2;
+  repeated Namespace namespaces = 3;
 }
+//schema请求应答数据
 message SchemasReply{
-  map<string, Schemas> SchemasMap = 1;
+  repeated SchemaEntity Schemas = 1;
 }
 
 message RequestArgs{

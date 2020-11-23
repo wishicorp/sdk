@@ -17,6 +17,10 @@ type backendTracingMiddleware struct {
 	next logical.Backend
 }
 
+func (b *backendTracingMiddleware) Name() string {
+	return b.next.Name()
+}
+
 func (b *backendTracingMiddleware) Version(ctx context.Context) string {
 	return b.next.Version(ctx)
 }
@@ -24,7 +28,7 @@ func (b *backendTracingMiddleware) Version(ctx context.Context) string {
 // Validate the backendTracingMiddle object satisfies the grpc-backend interface
 var _ logical.Backend = (*backendTracingMiddleware)(nil)
 
-func (b *backendTracingMiddleware) SchemaRequest(ctx context.Context) (*logical.SchemaResponse, error) {
+func (b *backendTracingMiddleware) SchemaRequest(ctx context.Context) (*logical.SchemaReply, error) {
 	defer func(then time.Time) {
 		b.logger.Trace("SchemaRequest", "status", "finished", "took", time.Since(then))
 	}(time.Now())

@@ -37,11 +37,12 @@ type Factory func(context.Context, *BackendConfig) (Backend, error)
 type Backend interface {
 	Setup(context.Context, *BackendConfig) error
 	Initialize(context.Context, *InitializationRequest) error
-	SchemaRequest(context.Context) (*SchemaResponse, error)
+	SchemaRequest(context.Context) (*SchemaReply, error)
 	HandleRequest(context.Context, *Request) (*Response, error)
 	HandleExistenceCheck(context.Context, *Request) (bool, bool, error)
 	Cleanup(context.Context)
 	Logger() log.Logger
 	Type() BackendType
 	Version(ctx context.Context) string
+	Name()string
 }

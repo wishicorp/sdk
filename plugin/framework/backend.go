@@ -20,20 +20,25 @@ var ErrOperationNotExists = errors.New("operation not exists")
 var _ logical.Backend = (*Backend)(nil)
 
 type Backend struct {
+	logger                  log.Logger
+	once                    sync.Once
+	pathsRe                 []*regexp.Regexp
+	schemas                 logical.NamespaceSchemas
 	Description             string
 	InitializeFunc          InitializeFunc
 	Namespaces              []*Namespace
 	Clean                   CleanupFunc
 	BackendType             logical.BackendType
 	BackendVersion          string
-	logger                  log.Logger
-	once                    sync.Once
-	pathsRe                 []*regexp.Regexp
-	schemas                 logical.NamespaceSchemas
 	ComponentView           logical.Component
 	ConsulView              logical.Consul
 	HandleRequestBeforeFunc HandleRequestBeforeFunc
 }
+
+func (b *Backend) Name() string {
+	return b.Description
+}
+
 type HandleRequestBeforeFunc func(context.Context, *logical.Request)
 
 // OperationFunc is the callback called for an operation on a path.
@@ -183,9 +188,9 @@ func (b *Backend) Version(ctx context.Context) string {
 	return b.BackendVersion
 }
 
-func (b *Backend) SchemaRequest(ctx context.Context) (*logical.SchemaResponse, error) {
+func (b *Backend) SchemaRequest(ctx context.Context) (*logical.SchemaReply, error) {
 	b.once.Do(b.initSchemaOnce)
-	return &logical.SchemaResponse{
-		NamespaceSchemas: b.schemas,
+	return &logical.SchemaReply{
+		Namespaces: b.schemas,
 	}, nil
 }

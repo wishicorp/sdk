@@ -16,7 +16,7 @@ func (m *HttpGateway) getSchema(backend logical.Backend, request *logical.Reques
 	}
 
 	var schema *logical.NamespaceSchema
-	for _, n := range result.NamespaceSchemas {
+	for _, n := range result.Namespaces {
 		if n.Namespace == request.Namespace {
 			schema = n
 		}

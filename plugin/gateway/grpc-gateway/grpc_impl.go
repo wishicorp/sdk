@@ -32,12 +32,12 @@ func (m *GRPCGateway) NewGRPCGatewayImpl() *GRPCGatewayImpl {
 
 func (m *GRPCGatewayImpl) Schemas(ctx context.Context, args *gwproto.SchemasArgs) (*gwproto.SchemasReply, error) {
 	backends := make([]map[string]string, 0)
-	protoSchemas := map[string]*gwproto.Schemas{}
 	if args.Backend != "" {
 		backends = append(backends, map[string]string{"name": args.Backend})
 	} else {
 		backends = m.pm.List()
 	}
+	protoSchemas := make([]*gwproto.SchemaEntity, 0)
 
 	for _, b := range backends {
 		backend, has := m.pm.GetBackend(b["name"])
@@ -48,20 +48,19 @@ func (m *GRPCGatewayImpl) Schemas(ctx context.Context, args *gwproto.SchemasArgs
 		if nil != err {
 			return nil, err
 		}
-		if args.Namespace != "" {
-			for _, schema := range resp.NamespaceSchemas {
-				if schema.Namespace == args.Namespace {
-					protoSchemas[args.Namespace] =
-						m.toProtoNamespaceSchemas([]*logical.NamespaceSchema{schema})
-				}
-			}
-			break
-		} else {
-			protoSchemas[b["name"]] = m.toProtoNamespaceSchemas(resp.NamespaceSchemas)
+		name := backend.Name()
+		if name == "" {
+			name = b["name"]
 		}
+		schema := gwproto.SchemaEntity{
+			Name:       name,
+			Backend:    b["name"],
+			Namespaces: m.toProtoNamespaces(resp.Namespaces),
+		}
+		protoSchemas = append(protoSchemas, &schema)
 	}
 
-	return &gwproto.SchemasReply{SchemasMap: protoSchemas}, nil
+	return &gwproto.SchemasReply{Schemas: protoSchemas}, nil
 }
 
 //TODO 未完成实现，后期和httpGateway 合并实现
@@ -131,17 +130,16 @@ func (m *GRPCGatewayImpl) ExecRequest(ctx context.Context, args *gwproto.Request
 	return gwReply, err
 }
 
-func (m *GRPCGatewayImpl) toProtoNamespaceSchemas(nss logical.NamespaceSchemas) *gwproto.Schemas {
-	var schemas []*gwproto.Schema
-	for _, schema := range nss {
-		proSchema := gwproto.Schema{
-			Namespace:   schema.Namespace,
-			Description: schema.Description,
-			Operations:  m.toProOperations(schema.Operations),
+func (m *GRPCGatewayImpl) toProtoNamespaces(nss logical.NamespaceSchemas) []*gwproto.Namespace {
+	var namespaces []*gwproto.Namespace
+	for _, ns := range nss {
+		proSchema := gwproto.Namespace{
+			Namespace: ns.Namespace,
+			Description: ns.Description,
 		}
-		schemas = append(schemas, &proSchema)
+		namespaces = append(namespaces, &proSchema)
 	}
-	return &gwproto.Schemas{Schemas: schemas}
+	return namespaces
 }
 
 func (m *GRPCGatewayImpl) toProOperations(operation map[logical.Operation]*logical.Schema) map[string]*gwproto.Operation {

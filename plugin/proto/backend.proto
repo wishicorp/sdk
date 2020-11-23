@@ -81,6 +81,10 @@ message TypeReply {
 message VersionReply{
   string version = 1;
 }
+
+message NameReply{
+  string  name = 1;
+}
 // HandleExistenceCheckArgs is the args for HandleExistenceCheck method.
 message HandleExistenceCheckArgs {
   uint32 storage_id = 1;
@@ -116,4 +120,5 @@ service Backend {
   // Type returns the BackendType for the particular backend
   rpc Type(Empty) returns (TypeReply);
   rpc Version(Empty) returns (VersionReply);
+  rpc Name(Empty) returns (NameReply);
 }

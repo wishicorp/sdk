@@ -102,37 +102,38 @@ func (m *HttpGateway) schemas(basePath string) {
 	m.ginServer.Router.GET(basePath+"/schemas", func(c *gin.Context) {
 		backends := make([]map[string]string, 0)
 		backendName := c.Query("backend")
-		namespace := c.Query("namespace")
-		schemas := map[string][]*logical.NamespaceSchema{}
+		schemas := make([]logical.SchemaResponse, 0)
+
 		if backendName != "" {
 			backends = append(backends, map[string]string{"name": backendName})
 		} else {
 			backends = m.pm.List()
 		}
 
-		for _, bMap := range backends {
-			backend, has := m.pm.GetBackend(bMap["name"])
+		for _, b := range backends {
+			backend, has := m.pm.GetBackend(b["name"])
 			if !has {
 				continue
+			}
+			name := backend.Name()
+			if name == "" {
+				name = b["name"]
 			}
 			resp, err := backend.SchemaRequest(context.Background())
 			if nil != err {
 				c.SecureJSON(200, gateway.Error(consts.ReplyCodeFailure, err.Error()))
 				return
 			}
-			if namespace != "" {
-				for _, schema := range resp.NamespaceSchemas {
-					if schema.Namespace == namespace {
-						schemas[namespace] = []*logical.NamespaceSchema{schema}
-					}
-				}
-				break
-			} else {
-				schemas[bMap["name"]] = resp.NamespaceSchemas
+			schema := logical.SchemaResponse{
+				Name:    name,
+				Backend: b["name"],
+				Namespaces: resp.Namespaces,
 			}
+			schemas = append(schemas, schema)
 		}
 
 		c.SecureJSON(200, gateway.Success(schemas))
+
 
 	})
 }

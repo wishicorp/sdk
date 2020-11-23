@@ -22,17 +22,24 @@ type Field struct {
 	IsList     bool     `json:"is_list"`
 }
 
+//客户端请求schema的返回结构体
+type SchemaResponse struct {
+	Name string `json:"name"`
+	Backend string `json:"backend"`
+	Namespaces NamespaceSchemas `json:"namespaces"`
+}
+
 type EmptySchema struct{}
 
 type NamespaceSchemas []*NamespaceSchema
 type NamespaceSchema struct {
 	Namespace   string `json:"namespace"`
 	Description string `json:"description"`
-	Operations  map[Operation]*Schema
+	Operations  map[Operation]*Schema `json:"operations"`
 }
 
-type SchemaResponse struct {
-	NamespaceSchemas []*NamespaceSchema `json:"namespace_schemas"`
+type SchemaReply struct {
+	Namespaces NamespaceSchemas `json:"namespace_schemas"`
 }
 
 //接口属性

@@ -334,7 +334,7 @@ type SchemaRequestReply struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	NamespaceSchemas []*NamespaceSchema `protobuf:"bytes,1,rep,name=NamespaceSchemas,proto3" json:"NamespaceSchemas,omitempty"`
+	NamespaceSchemas []*NamespaceSchema `protobuf:"bytes,1,rep,name=Namespaces,proto3" json:"Namespaces,omitempty"`
 	Err              string             `protobuf:"bytes,2,opt,name=err,proto3" json:"err,omitempty"`
 }
 
@@ -466,7 +466,7 @@ var file_schema_proto_depIdxs = []int32{
 	1, // 1: proto.Schema.input:type_name -> proto.Field
 	1, // 2: proto.Schema.output:type_name -> proto.Field
 	5, // 3: proto.NamespaceSchema.operations:type_name -> proto.NamespaceSchema.OperationsEntry
-	3, // 4: proto.SchemaRequestReply.NamespaceSchemas:type_name -> proto.NamespaceSchema
+	3, // 4: proto.SchemaRequestReply.Namespaces:type_name -> proto.NamespaceSchema
 	2, // 5: proto.NamespaceSchema.OperationsEntry.value:type_name -> proto.Schema
 	6, // [6:6] is the sub-list for method output_type
 	6, // [6:6] is the sub-list for method input_type

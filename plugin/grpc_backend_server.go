@@ -25,6 +25,11 @@ type backendGRPCPluginServer struct {
 	logger log.Logger
 }
 
+func (b *backendGRPCPluginServer) Name(ctx context.Context, empty *proto.Empty) (*proto.NameReply, error) {
+	name := b.backend.Name()
+	return &proto.NameReply{Name: name}, nil
+}
+
 func (b *backendGRPCPluginServer) SchemaRequest(ctx context.Context, empty *proto.Empty) (*proto.SchemaRequestReply, error) {
 	resp, err := b.backend.SchemaRequest(ctx)
 	if err != nil {
