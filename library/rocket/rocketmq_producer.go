@@ -100,19 +100,19 @@ func (p *commonProducer) Shutdown() error {
 	return p.Producer.Shutdown()
 }
 
-func (p *commonProducer) SendSync(ctx context.Context, mq ...*primitive.Message) (*primitive.SendResult, error) {
+func (p *commonProducer) SendSync(ctx context.Context, msg ...*primitive.Message) (*primitive.SendResult, error) {
 	p.Lock()
 	defer p.Unlock()
-	return p.Producer.SendSync(ctx, mq...)
+	return p.Producer.SendSync(ctx, msg...)
 }
 func (p *commonProducer) SendAsync(ctx context.Context, mq func(ctx context.Context, result *primitive.SendResult, err error),
 	msg ...*primitive.Message) error {
 	p.Lock()
 	defer p.Unlock()
-	return p.Producer.SendAsync(ctx, mq)
+	return p.Producer.SendAsync(ctx, mq, msg...)
 }
-func (p *commonProducer) SendOneWay(ctx context.Context, mq ...*primitive.Message) error {
+func (p *commonProducer) SendOneWay(ctx context.Context, msg ...*primitive.Message) error {
 	p.Lock()
 	defer p.Unlock()
-	return p.Producer.SendOneWay(ctx, mq...)
+	return p.Producer.SendOneWay(ctx, msg...)
 }

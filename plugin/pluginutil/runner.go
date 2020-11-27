@@ -24,7 +24,7 @@ type PluginRunner struct {
 	Args           []string       `json:"args" structs:"args"`
 	Env            []string       `json:"env" structs:"env"`
 	Sha256         []byte         `json:"sha256" structs:"sha256"`
-	Builtin        bool           `json:"pluginbuiltin" structs:"pluginbuiltin"`
+	Builtin        bool           `json:"builtin" structs:"builtin"`
 	BuiltinFactory BuiltinFactory `json:"-" structs:"-"`
 }
 
