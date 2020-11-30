@@ -2,6 +2,7 @@ package http_gateway
 
 import (
 	"context"
+	"github.com/wishicorp/sdk/helper/jsonutil"
 	"github.com/wishicorp/sdk/plugin/framework"
 	"github.com/wishicorp/sdk/plugin/logical"
 )
@@ -67,7 +68,7 @@ func (m *HttpGateway) authorization(backend logical.Backend, request *logical.Re
 		return nil, err
 	}
 	if m.logger.IsTrace() {
-		m.logger.Trace("auth reply", "reply", authResp)
+		m.logger.Trace("auth reply", "reply", jsonutil.EncodeToString(authResp))
 	}
 	return authResp, nil
 }
