@@ -75,7 +75,7 @@ func (r *Request) Validate(in interface{}) error {
 		switch ferr := err.(type) {
 		case validator.ValidationErrors:
 			for _, fieldError := range ferr {
-				fs = append(fs, fieldError.Field())
+				fs = append(fs, getTag(in, fieldError.StructField()))
 			}
 		default:
 			fs = append(fs, err.Error())
@@ -84,6 +84,27 @@ func (r *Request) Validate(in interface{}) error {
 	}
 	return nil
 }
+
+func getTag(in interface{}, name string)string  {
+	obj := reflect.TypeOf(in)
+	var field reflect.StructField
+	switch obj.Kind() {
+	case reflect.Ptr:
+		f, ok := obj.Elem().FieldByName(name)
+		if ok{field = f}
+	case reflect.Struct:
+		f, ok := obj.FieldByName(name)
+		if ok{field = f}
+	default:
+		return ""
+	}
+	if field.Tag.Get("json")!=""{
+		return field.Tag.Get("json")
+	}else {
+		return field.Name
+	}
+}
+
 func (r *Request) GetAuthorized() *Authorized {
 	return r.Authorized
 }
