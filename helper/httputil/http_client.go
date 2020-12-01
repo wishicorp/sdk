@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"strings"
 	"sync"
@@ -115,12 +116,14 @@ func (c *client) mergeHeader(header http.Header) http.Header {
 	}
 	if header != nil {
 		for k, v := range header {
-			headers[k] = v
+			for _, s := range v {
+				textproto.MIMEHeader(headers).Add(k, s)
+			}
 		}
 	}
-
 	return headers
 }
+
 func (c *client) Get(reqUrl string, header http.Header) (ret []byte, err error) {
 	request, err := http.NewRequest("GET", reqUrl, nil)
 	if nil != err {
@@ -172,7 +175,7 @@ func (c *client) write(reqUrl string, method RequestMethod, header http.Header, 
 	if err != nil {
 		return nil, err
 	}
-	c.mergeHeader(header)
+	request.Header = c.mergeHeader(header)
 	return doRequest(c, request)
 }
 
