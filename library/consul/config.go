@@ -28,6 +28,7 @@ func (c *client) LoadConfig(out interface{}) error {
 		fmt.Sprintf("/config/%s,%s/%s", app.Name, app.Profile, cfg.DataKey),
 	}
 	options := c.queryOptions(nil)
+	var succCount = 0
 	for _, path := range keyPaths {
 		kvp, _, err := c.client.KV().Get(path, options)
 		if nil != err {
@@ -36,18 +37,29 @@ func (c *client) LoadConfig(out interface{}) error {
 		if kvp == nil {
 			continue
 		}
-		var format string = strings.ToLower(c.config.Config.Format)
-		switch format {
-		case "hcl":
-			err = hcl.Unmarshal(kvp.Value, out)
-		case "json":
-			err = json.Unmarshal(kvp.Value, out)
-		default:
-			err = yaml.Unmarshal(kvp.Value, out)
+		if err := c.decodeConfig(path, kvp.Value, out); err != nil {
+			return err
 		}
-		if err != nil {
-			return fmt.Errorf("unmarshal:%s => format:%s err:%s", path, format, err.Error())
-		}
+		succCount++
+	}
+	if 0 == succCount{
+		return fmt.Errorf("config %v is empty", keyPaths)
+	}
+	return nil
+}
+
+func (c *client)decodeConfig(key string,value []byte, out interface{})(err error)  {
+	var format string = strings.ToLower(c.config.Config.Format)
+	switch format {
+	case "hcl":
+		err = hcl.Unmarshal(value, out)
+	case "json":
+		err = json.Unmarshal(value, out)
+	default:
+		err = yaml.Unmarshal(value, out)
+	}
+	if err != nil {
+		return fmt.Errorf("unmarshal:%s => format:%s err:%s", key, format, err.Error())
 	}
 	return nil
 }

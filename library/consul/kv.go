@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hashicorp/consul/api"
-	"github.com/hashicorp/hcl"
 )
 
 func (c *client) KVFire(key string, opts *api.QueryOptions, out interface{}) error {
@@ -13,14 +12,9 @@ func (c *client) KVFire(key string, opts *api.QueryOptions, out interface{}) err
 		return err
 	}
 	if nil == kvp {
-		return fmt.Errorf("kv[%s] not exists", key)
+		return fmt.Errorf("key[%s] not exists", key)
 	}
-
-	if hcl.Unmarshal(kvp.Value, out) != nil {
-		return err
-	}
-
-	return nil
+	return c.decodeConfig(key, kvp.Value, out)
 }
 
 func (c *client) KVInfo(key string, opts *api.QueryOptions) (*api.KVPair, error) {
@@ -29,7 +23,7 @@ func (c *client) KVInfo(key string, opts *api.QueryOptions) (*api.KVPair, error)
 		return nil, err
 	}
 	if nil == kvp {
-		return nil, fmt.Errorf("kv[%s] not exists", key)
+		return nil, fmt.Errorf("key[%s] not exists", key)
 	}
 	return kvp, nil
 }
