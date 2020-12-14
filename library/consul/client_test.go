@@ -17,7 +17,7 @@ func mockConfig() *Config {
 		Application: struct {
 			Name    string
 			Profile string
-		}{Name: os.Getenv("APP_NAME"), Profile: os.Getenv("PROFILE")},
+		}{Name: os.Getenv("APP_NAME"), Profile: os.Getenv("APP_PROFILE")},
 		Config: struct {
 			DataKey string
 			Format  string
