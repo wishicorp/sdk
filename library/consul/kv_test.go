@@ -6,7 +6,9 @@ import (
 )
 
 func TestClient_KVInfo(t *testing.T) {
-	centralConfig := Config{}
+	centralConfig := Config{
+		Token:       "",
+	}
 	cli, err := NewClient(&centralConfig)
 	if nil != err {
 		t.Fatal(err)
@@ -44,10 +46,10 @@ func TestClient_KVAcquire(t *testing.T) {
 	}
 	key := "session/member-bill"
 	session := "53e473ca-5b89-fede-54d8-e1ef08a1de10"
-	if kvp, another, err := cli.KVAcquire(key, session, nil); err != nil {
+	if kvp, err := cli.KVAcquire(key, session, nil); err != nil {
 		t.Fatal(err)
 	} else {
-		t.Log(another, kvp)
+		t.Log( kvp)
 	}
 }
 
