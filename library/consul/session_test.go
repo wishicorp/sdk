@@ -6,8 +6,7 @@ import (
 )
 
 func TestNewClient(t *testing.T) {
-	centralConfig := Config{}
-	cli, err := NewClient(&centralConfig)
+	cli, err := NewClient(mockConfig())
 	if nil != err {
 		t.Fatal(err)
 	}
