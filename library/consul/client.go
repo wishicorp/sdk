@@ -4,7 +4,10 @@ package consul
 import (
 	"crypto/tls"
 	"github.com/hashicorp/consul/api"
+	"github.com/hashicorp/go-hclog"
 	"net/http"
+	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -14,6 +17,7 @@ type Client interface {
 	Client() *api.Client
 	Register(s *Service) error
 	DeRegister(s *Service) error
+	SetLogger(log hclog.Logger)
 
 	//让服务进入维护模式，不可用
 	Maintenance(id string, reason string) error
@@ -75,6 +79,7 @@ type client struct {
 	client         *api.Client
 	config         *Config
 	cachedServices map[string][]*api.AgentService
+	hclog hclog.Logger
 }
 
 func NewClient(c *Config) (Client, error) {
@@ -101,7 +106,31 @@ func NewClient(c *Config) (Client, error) {
 
 	_client := &client{client: cli, config: c, cachedServices: map[string][]*api.AgentService{}}
 	_client.autoPullService(time.Second * 30)
+	_client.hclog = hclog.New(&hclog.LoggerOptions{
+		Name:            "consul",
+		Level:           hclog.DefaultLevel,
+	})
+	if level := os.Getenv("CONSUL_LOG_LEVEL"); level != ""{
+		switch strings.ToUpper(level) {
+		case "ERROR":
+			_client.hclog.SetLevel(hclog.Error)
+		case "TRACE":
+			_client.hclog.SetLevel(hclog.Trace)
+		case "DEBUG":
+			_client.hclog.SetLevel(hclog.Debug)
+		default:
+			_client.hclog.SetLevel(hclog.Info)
+		}
+	}
+
 	return _client, err
+}
+
+func (c *client) SetLogger(log hclog.Logger) {
+	if nil != log {
+		return
+	}
+	c.hclog = log
 }
 
 func (c *client) Client() *api.Client {

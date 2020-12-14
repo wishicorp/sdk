@@ -2,7 +2,6 @@ package consul
 
 import (
 	"github.com/hashicorp/consul/api"
-	"log"
 	"time"
 )
 
@@ -28,7 +27,6 @@ func (c *client) SessionInfo(id string, opts *api.QueryOptions) (*api.SessionEnt
 	if nil != err {
 		return nil, err
 	}
-	log.Println(entry, err)
 	return entry, nil
 }
 

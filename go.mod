@@ -38,5 +38,6 @@ require (
 	google.golang.org/grpc v1.31.1
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/redis.v5 v5.2.9
+	gopkg.in/yaml.v2 v2.2.8
 	xorm.io/core v0.7.3
 )

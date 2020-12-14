@@ -1,9 +1,10 @@
 package consul
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/hcl"
+	"gopkg.in/yaml.v2"
 	"strings"
 )
 
@@ -16,7 +17,7 @@ import (
 // /config/{APP_NAME},{PROFILE}/{DATA_KEY}
 func (c *client) LoadConfig(out interface{}) error {
 	if c.config.Config.DataKey == "" {
-		c.config.Config.DataKey = "data"
+		c.config.Config.DataKey = "1.0.0"
 	}
 	cfg := c.config.Config
 	app := c.config.Application
@@ -27,25 +28,26 @@ func (c *client) LoadConfig(out interface{}) error {
 		fmt.Sprintf("/config/%s,%s/%s", app.Name, app.Profile, cfg.DataKey),
 	}
 	options := c.queryOptions(nil)
-	var _errors []string
 	for _, path := range keyPaths {
 		kvp, _, err := c.client.KV().Get(path, options)
 		if nil != err {
-			if strings.Contains(err.Error(), "Client.Timeout") {
-				return err
-			}
-			_errors = append(_errors, fmt.Sprintf("%s => %s", path, err.Error()))
+			return err
+		}
+		if kvp == nil {
 			continue
 		}
-		if nil != kvp {
-			if hcl.Unmarshal(kvp.Value, out) != nil {
-				return err
-			}
+		var format string = strings.ToLower(c.config.Config.Format)
+		switch format {
+		case "hcl":
+			err = hcl.Unmarshal(kvp.Value, out)
+		case "json":
+			err = json.Unmarshal(kvp.Value, out)
+		default:
+			err = yaml.Unmarshal(kvp.Value, out)
 		}
-	}
-
-	if len(_errors) == len(keyPaths) {
-		return errors.New(strings.Join(_errors, ":"))
+		if err != nil {
+			return fmt.Errorf("unmarshal:%s => format:%s err:%s", path, format, err.Error())
+		}
 	}
 	return nil
 }

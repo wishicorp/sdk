@@ -85,7 +85,7 @@ func (c *client) GetService(id, tags string) (*api.AgentService, error) {
 		c.Unlock()
 	}
 
-	return ss[rand.Intn(len(ss))&0xffff], nil
+	return ss[rand.Intn(len(ss))], nil
 }
 
 func (c *client) GetServiceAddrPort(id string, useLan bool, tags string) (host string, port int, err error) {

@@ -3,6 +3,7 @@ package consul
 import (
 	"fmt"
 	"github.com/hashicorp/consul/api"
+	"github.com/wishicorp/sdk/helper/jsonutil"
 )
 
 func (c *client) Register(s *Service) error {
@@ -28,13 +29,18 @@ func (c *client) Register(s *Service) error {
 		Tags:            append(s.Tags, c.config.Application.Profile),
 		Check:           check,
 	}
+	if c.hclog.IsTrace(){
+		c.hclog.Trace("register","service", jsonutil.EncodeToString(a))
+	}
 	err := c.client.Agent().ServiceRegister(a)
 	return err
 }
 func (c *client) DeRegister(s *Service) error {
 	c.Lock()
 	defer c.Unlock()
-
+	if c.hclog.IsTrace(){
+		c.hclog.Trace("deregister","service", s.ID)
+	}
 	err := c.client.Agent().ServiceDeregister(s.ID)
 	return err
 }
