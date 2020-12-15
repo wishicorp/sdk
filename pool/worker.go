@@ -4,27 +4,26 @@ import (
 	"context"
 	"errors"
 	"github.com/hashicorp/go-hclog"
-	"time"
 )
 
 var ErrWorkFull = errors.New("worker chan is full")
+var ErrWorkStopped = errors.New("worker stopped")
 
 //任务结构体
 type Worker struct {
 	factory   Factory //任务执行方法
 	name      string
 	running   chan bool
-	stopCtx   context.Context //用于从外部context直接关闭pool
-	stopChan  chan bool       //用于pool自身的shutdown方法关闭
-	inputChan chan *subject   //数据输入chan
+	stopChan  chan bool     //用于pool自身的shutdown方法关闭
+	inputChan chan *subject //数据输入chan
 	logger    hclog.Logger
+	stopped   bool
 }
 
 func NewWorker(name string, ctx context.Context, factory Factory, logger hclog.Logger) *Worker {
 	return &Worker{
 		name:      name,
 		factory:   factory,
-		stopCtx:   ctx,
 		stopChan:  make(chan bool, 1),
 		logger:    logger.Named(name),
 		inputChan: make(chan *subject, 16384),
@@ -41,6 +40,10 @@ func (m *Worker) ChanSize() int {
 }
 
 func (m *Worker) Input(s *subject) error {
+	if m.stopped {
+		return ErrWorkStopped
+	}
+
 	if len(m.inputChan) == cap(m.inputChan) {
 		return ErrWorkFull
 	}
@@ -48,6 +51,9 @@ func (m *Worker) Input(s *subject) error {
 	return nil
 }
 func (m *Worker) Stop() {
+	if m.logger.IsTrace() {
+		m.logger.Trace("stopping...")
+	}
 	m.stopChan <- true
 }
 
@@ -57,8 +63,8 @@ func (m *Worker) Start() {
 			m.logger.Trace("exited")
 		}
 	}()
-
-	for {
+	isRunning := true
+	for isRunning || m.ChanSize() > 0 {
 		select {
 		case s := <-m.inputChan:
 			if m.logger.IsTrace() {
@@ -71,19 +77,17 @@ func (m *Worker) Start() {
 				m.logger.Trace("finished")
 			}
 		case <-m.stopChan:
-			m.cleanup()
-			return
-		case <-m.stopCtx.Done():
-			m.cleanup()
-			return
+			isRunning = false
+			m.stopped = true
 		}
 	}
+	m.cleanup()
 
 }
 
 func (m *Worker) cleanup() {
-	for i := 0; i < len(m.inputChan); {
-		time.Sleep(time.Second)
+	if m.logger.IsTrace() {
+		m.logger.Trace("cleanup...")
 	}
 	close(m.stopChan)
 	close(m.inputChan)

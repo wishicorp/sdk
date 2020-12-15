@@ -22,6 +22,7 @@ type WorkerPool struct {
 	workers     Workers
 	inputChan   chan *subject //任务输入chan
 	workerCount int
+	stopped     bool
 }
 
 func NewWorkerPool(name string, ctx context.Context, logger hclog.Logger) *WorkerPool {
@@ -40,11 +41,14 @@ func (p *WorkerPool) NewWorker(factory Factory) {
 	p.Lock()
 	p.Unlock()
 	name := fmt.Sprintf("worker-%d", p.workerCount)
-	p.AddWorker(NewWorker(name, p.stopCtx, factory, p.logger))
+	p.AddWorker(NewWorker(name, context.Background(), factory, p.logger))
 }
 
 //输入数据
 func (p *WorkerPool) Input(sub *subject) {
+	if p.stopped {
+		return
+	}
 	p.inputChan <- sub
 }
 
@@ -57,26 +61,21 @@ func (p *WorkerPool) AddWorker(worker *Worker) {
 }
 
 func (p *WorkerPool) Shutdown() {
-	if nil == p {
-		return
-	}
+	p.stopped = true
 	p.stopChan <- true
 }
 
 func (p *WorkerPool) Running() <-chan bool {
-	if nil == p {
-		return nil
-	}
 	return p.running
 }
 
 func (p *WorkerPool) Start() {
-	defer func() {
-		if p.logger.IsTrace() {
-			p.logger.Trace("exited")
-		}
-	}()
-	for {
+	if p.logger.IsTrace() {
+		p.logger.Trace("started")
+	}
+
+	isRunning := true
+	for isRunning || len(p.inputChan) > 0 {
 		select {
 		case sub := <-p.inputChan:
 			sort.Sort(p.workers) //取work chan内任务最少的那个
@@ -88,13 +87,15 @@ func (p *WorkerPool) Start() {
 					"err", err.Error())
 			}
 		case <-p.stopChan:
-			p.cleanup()
-			return
+			isRunning = false
+			p.stopped = true
 		case <-p.stopCtx.Done():
-			p.cleanup()
-			return
+			p.stopChan <- true
 		}
 	}
+
+	p.cleanup()
+
 }
 
 func (p *WorkerPool) StartWorkers() {
@@ -104,8 +105,14 @@ func (p *WorkerPool) StartWorkers() {
 }
 
 func (p *WorkerPool) cleanup() {
+	defer func() {
+		if p.logger.IsTrace() {
+			p.logger.Trace("exited")
+		}
+	}()
+
 	if p.logger.IsTrace() {
-		p.logger.Trace("cleaning")
+		p.logger.Trace("cleanup...")
 	}
 	for i := 0; i < len(p.inputChan); {
 		time.Sleep(time.Second)
@@ -113,10 +120,7 @@ func (p *WorkerPool) cleanup() {
 
 	for _, worker := range p.workers {
 		worker.Stop()
-		select {
-		case <-worker.Running():
-		case <-time.After(time.Second * 5):
-		}
+		<-worker.Running()
 	}
 	close(p.inputChan)
 	close(p.running)

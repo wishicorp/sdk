@@ -13,8 +13,13 @@ func TestNewWorkerPool(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	pool := NewWorkerPool("main-pool", ctx, logger)
 
-	pool.AddWorker(new("worker-1", ctx, logger))
-	pool.AddWorker(new("worker-2", ctx, logger))
+	pool.NewWorker(factory)
+	pool.NewWorker(factory)
+	pool.NewWorker(factory)
+	pool.NewWorker(factory)
+
+	pool.AddWorker(new("worker-1", context.Background(), logger))
+	pool.AddWorker(new("worker-2", context.Background(), logger))
 	pool.AddWorker(new("worker-3", ctx, logger))
 	pool.AddWorker(new("worker-4", ctx, logger))
 	pool.AddWorker(new("worker-5", ctx, logger))
@@ -23,18 +28,18 @@ func TestNewWorkerPool(t *testing.T) {
 	go pool.Start()
 
 	go func() {
-		for i := 0; i < 1000; i++ {
+		for i := 0; i < 10; i++ {
 			sub := NewSubject(fmt.Sprintf("subject %d", i))
 			sub.Observer(NewReader(fmt.Sprintf("reader %d", i)))
 			pool.inputChan <- sub
 		}
 	}()
 
-	time.AfterFunc(time.Second*5, func() {
+	time.AfterFunc(time.Second*1, func() {
 		cancel()
 	})
 
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Second * 2)
 }
 
 func new(name string, ctx context.Context, logger hclog.Logger) *Worker {
