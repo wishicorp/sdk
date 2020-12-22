@@ -51,12 +51,14 @@ func (c *client) LoadConfig(out interface{}) error {
 func (c *client)decodeConfig(key string,value []byte, out interface{})(err error)  {
 	var format string = strings.ToLower(c.config.Config.Format)
 	switch format {
-	case "hcl":
-		err = hcl.Unmarshal(value, out)
+	case "yaml":
+		err = yaml.Unmarshal(value, out)
+	case "yml":
+		err = yaml.Unmarshal(value, out)
 	case "json":
 		err = json.Unmarshal(value, out)
 	default:
-		err = yaml.Unmarshal(value, out)
+		err = hcl.Unmarshal(value, out)
 	}
 	if err != nil {
 		return fmt.Errorf("unmarshal:%s => format:%s err:%s", key, format, err.Error())
