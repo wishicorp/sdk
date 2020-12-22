@@ -14,7 +14,7 @@ import (
 type callFunc func(context.Context, ...*primitive.MessageExt) (consumer.ConsumeResult, error)
 
 var _ PushConsumer = (*httpConsumer)(nil)
-
+var errTopicAndGroupToLong = errors.New("the length of GID(CID) and TOPIC is too long, total length(include instance) should not longer than 119: ")
 type httpConsumer struct {
 	sync.Mutex
 	MQClient   mq_http_sdk.MQClient
@@ -48,8 +48,9 @@ func (h *httpConsumer) Start() error {
 	h.Lock()
 	defer h.Unlock()
 	h.started = true
-	for _, handler := range h.handlers {
+	for n, handler := range h.handlers {
 		go handler.start()
+		fmt.Println("start", n)
 	}
 	return nil
 }
@@ -60,15 +61,22 @@ func (h *httpConsumer) Shutdown() error {
 
 func (h *httpConsumer) Subscribe(topic string, selector consumer.MessageSelector,
 	f func(context.Context, ...*primitive.MessageExt) (consumer.ConsumeResult, error)) error {
+
+	if err := h.checkLength(topic); err != nil{
+		return err
+	}
+
 	h.Lock()
 	defer h.Unlock()
 	if h.started {
 		return errors.New("must before start()")
 	}
+
 	mqConsumer := h.MQClient.GetConsumer(h.instanceId, topic, h.groupId, "")
 	h.handlers[topic] = &consumerHandler{
 		MQConsumer: mqConsumer,
 		callFunc:   f,
+		topic: topic,
 	}
 	return nil
 }
@@ -77,6 +85,18 @@ func (h *httpConsumer) Unsubscribe(topic string) error {
 	h.Lock()
 	defer h.Unlock()
 	delete(h.handlers, topic)
+	return nil
+}
+
+//阿里云长度限制
+func (h *httpConsumer)checkLength(topic string)error  {
+	//topics/jdsh_coupon_combo_order/messages?consumer=GID_jdsh_coupon_combo&ns=MQ_INST_1401091344273301_BcunFXU4&numOfMessages=8&waitseconds=1
+	s := fmt.Sprintf("topics/%s/messages?consumer=%s&ns=%s&numOfMessages=8&waitseconds=1",
+		topic, h.groupId, h.instanceId,
+		)
+	if len(s) > 125{
+		return errors.New(errTopicAndGroupToLong.Error()+s)
+	}
 	return nil
 }
 
@@ -122,19 +142,15 @@ func (c *consumerHandler) start() {
 				}
 			case <-errChan:
 				time.Sleep(time.Second)
-			case <-time.After(30 * time.Second):
+			case <-time.After(5 * time.Second):
 			}
 		}
 	}()
-	ticker := time.NewTicker(time.Second)
 	for {
-		select {
-		case <-ticker.C:
-			c.MQConsumer.ConsumeMessage(respChan, errChan,
-				8, // 一次最多消费8条(最多可设置为16条)
-				1, // 长轮询时间1秒（最多可设置为30秒）
-			)
-		}
+		c.MQConsumer.ConsumeMessage(respChan, errChan,
+			8, // 一次最多消费8条(最多可设置为16条)
+			1, // 长轮询时间1秒（最多可设置为30秒）
+		)
 		// 长轮询消费消息
 		// 长轮询表示如果topic没有消息则请求会在服务端挂住1s，1s内如果有消息可以消费则立即返回
 	}

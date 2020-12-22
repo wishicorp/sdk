@@ -34,14 +34,6 @@ func TestRabbitmq_Subscribe(t *testing.T) {
 			t.Log("on Subscribe ", d.RoutingKey, string(d.Body), d.MessageId, d.CorrelationId)
 		})
 	}()
-	err = broker.Publish(ex, routing, amqp.Publishing{
-		MessageId:     uuid.New().String(),
-		CorrelationId: uuid.New().String(),
-		AppId:         uuid.New().String(),
-		Type:          "text/plain",
-		Body:          []byte("test message: " + time.Now().String()),
-	})
-	t.Log("on  Publish", err)
 	done := make(chan bool)
 	<-done
 
