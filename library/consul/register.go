@@ -18,6 +18,7 @@ func (c *client) Register(s *Service) error {
 		Body:                           s.MatchBody,
 		TLSSkipVerify:                  true,
 		DeregisterCriticalServiceAfter: "5m",
+		Status:                         "warning",
 	}
 
 	a := &api.AgentServiceRegistration{
@@ -29,8 +30,8 @@ func (c *client) Register(s *Service) error {
 		Tags:            append(s.Tags, c.config.Application.Profile),
 		Check:           check,
 	}
-	if c.hclog.IsTrace(){
-		c.hclog.Trace("register","service", jsonutil.EncodeToString(a))
+	if c.hclog.IsTrace() {
+		c.hclog.Trace("register", "service", jsonutil.EncodeToString(a))
 	}
 	err := c.client.Agent().ServiceRegister(a)
 	return err
@@ -38,8 +39,8 @@ func (c *client) Register(s *Service) error {
 func (c *client) DeRegister(s *Service) error {
 	c.Lock()
 	defer c.Unlock()
-	if c.hclog.IsTrace(){
-		c.hclog.Trace("deregister","service", s.ID)
+	if c.hclog.IsTrace() {
+		c.hclog.Trace("deregister", "service", s.ID)
 	}
 	err := c.client.Agent().ServiceDeregister(s.ID)
 	return err
