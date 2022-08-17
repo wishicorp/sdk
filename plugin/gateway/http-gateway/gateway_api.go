@@ -172,7 +172,7 @@ func (m *HttpGateway) invokeRequest(c *gin.Context, method gateway.Method, data 
 
 func GetRemoteAddr(c *gin.Context) string {
 	remoteAddr := c.Request.RemoteAddr
-	if remoteAddr == "127.0.0.1" {
+	if strings.HasPrefix(remoteAddr, "127.0.0.1"){
 		remoteAddr = c.GetHeader("X-Forwarded-For")
 	}
 	return remoteAddr
